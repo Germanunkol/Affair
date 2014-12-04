@@ -62,6 +62,7 @@ function Server:update( dt )
 
 				-- First letter stands for the command:
 				command, content = string.match(data, "(.)(.*)")
+				command = string.byte( command )
 
 				self:received( command, content, user )
 				
@@ -96,17 +97,21 @@ function Server:received( command, msg, user )
 			self.callbacks.newPlayername( user )
 		end
 		self:send( CMD.NEW_PLAYER, user.id .. "|" .. user.playerName )
+
+	elseif self.callbacks.received then
+		-- If the command is not known, then send it on: 
+		self.callbacks.received( command, msg, user )
 	end
 end
 
 function Server:send( command, msg, user )
 	if user then
-		user.connection:send( command .. msg .. "\n" )
+		user.connection:send( string.char(command) .. msg .. "\n" )
 		return
 	end
 	for k, u in pairs( userList ) do
 		if u.connection then
-			u.connection:send( command .. msg .. "\n" )
+			u.connection:send( string.char(command) .. msg .. "\n" )
 		end
 	end
 end

@@ -30,7 +30,7 @@ function Client:new( address, port, playername )
 
 	o.callbacks = {
 		newUser = nil,
-		newMessage = nil,
+		received = nil,
 		receivedPlayername = nil,
 		disconnected = nil,
 	}
@@ -49,6 +49,7 @@ function Client:update( dt )
 
 			-- First letter stands for the command:
 			command, content = string.match(data, "(.)(.*)")
+			command = string.byte( command )
 			print("d", data, command, content)
 
 			self:received( command, content )
@@ -81,11 +82,14 @@ function Client:received( command, msg )
 	elseif command == CMD.PLAYER_LEFT then
 		local id = tonumber(msg)
 		userList[id] = nil
+	elseif self.callbacks.received then
+		self.callbacks.received( command, msg )
 	end
 end
 
 function Client:send( command, msg )
-	self.conn:send( command .. msg .. "\n" )
+	print("client send:", command, msg)
+	self.conn:send( string.char(command) .. msg .. "\n" )
 end
 
 function Client:getUsers()

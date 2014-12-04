@@ -49,4 +49,10 @@ function network:getUsers()
 	end
 end
 
+function network:send( command, msg )
+	if client then
+		client:send( command, msg )
+	end
+end
+
 return network
