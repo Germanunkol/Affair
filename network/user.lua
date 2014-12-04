@@ -13,6 +13,7 @@ end
 
 function User:setPlayerName( name )
 	self.playerName = name
+	self.receivedPlayername = true
 end
 
 return User

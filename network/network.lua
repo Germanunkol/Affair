@@ -40,4 +40,13 @@ function network:update( dt )
 	if client then client:update( dt ) end
 end
 
+function network:getUsers()
+	if client then
+		return client:getUsers()
+	end
+	if server then
+		return server:getUsers()
+	end
+end
+
 return network

@@ -34,4 +34,10 @@ function love.keypressed( key )
 end
 
 function love.draw()
+	local users = network:getUsers()
+	local x, y = 10, 10
+	for k, u in pairs( users ) do
+		love.graphics.print( u.playerName, x, y )
+		y = y + 20
+	end
 end

@@ -1,4 +1,3 @@
-
 local _PATH = (...):match('^(.*[%./])[^%.%/]+$') or ''
 
 local socket = require("socket")
@@ -77,10 +76,10 @@ function Server:update( dt )
 					--if client.character then
 						--broadcast("CHARACTERDEL|" .. client.playerName)
 					--end
+					self:disconnectedUser( user )
 
 					numberOfUsers = numberOfUsers - 1
-					print("Client left. Clients: " .. numberOfUsers )
-					user.connection:shutdown()
+					
 					userList[k] = nil
 				else
 					print("Err Received:", msg, data)
@@ -100,7 +99,11 @@ function Server:received( command, msg, user )
 	end
 end
 
-function Server:send( command, msg )
+function Server:send( command, msg, user )
+	if user then
+		user.connection:send( command .. msg .. "\n" )
+		return
+	end
 	for k, u in pairs( userList ) do
 		if u.connection then
 			u.connection:send( command .. msg .. "\n" )
@@ -110,11 +113,25 @@ end
 
 function Server:newUser( user )
 	print("New Client! Number of Clients: " .. numberOfUsers )
+
+	-- Synchronize: Send all other users to this user:
+	for k, u in pairs( userList ) do
+		self:send( CMD.NEW_PLAYER, u.id .. "|" .. u.playerName, user )
+	end
+
 	if self.callbacks.newUser then
 		self.callbacks.newUser( user )
 	end
 end
 
+function Server:disconnectedUser( user )
+	print("Client left. Clients: " .. numberOfUsers )
+	user.connection:shutdown()
+	
+	for k, u in pairs( userList ) do
+		self:send( CMD.PLAYER_LEFT, user.id )
+	end
+end
 
 -- Find an empty slot in the user list:
 function findFreeID()
@@ -123,6 +140,10 @@ function findFreeID()
 			return k
 		end
 	end
+end
+
+function Server:getUsers()
+	return userList
 end
 
 return Server

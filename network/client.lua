@@ -77,12 +77,19 @@ function Client:received( command, msg )
 		local id, playerName = string.match( msg, "(.*)|(.*)" )
 		print("user:", id, playerName )
 		local user = User:new( nil, playerName, id )
-		userList[id] = user
+		userList[tonumber(id)] = user
+	elseif command == CMD.PLAYER_LEFT then
+		local id = tonumber(msg)
+		userList[id] = nil
 	end
 end
 
 function Client:send( command, msg )
 	self.conn:send( command .. msg .. "\n" )
+end
+
+function Client:getUsers()
+	return userList
 end
 
 return Client
