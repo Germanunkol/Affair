@@ -2,6 +2,8 @@
 require( "lib/class" )
 require( "lib/LUBE" )
 
+map = require( "map" )
+
 local numConnected = 0
 local server = 0
 
@@ -46,19 +48,34 @@ function love.load( args )
 		assert(conn:connect(host, 3410, true))
 		conn.callbacks.recv = clientRecv
 	end
+
+	map:load()
 end
 
 function love.update( dt )
 	conn:update( dt )
+
+	map:update( dt )
 end
 
-function serverRecv( msg )
+function serverRecv( msg ,id )
 	print("Received:\n\t", msg)
+	print(id)
 end
-function clientRecv( msg )
+function clientRecv( msg, id )
 	print("Received:\n\t", msg)
+	print(id)
 end
 
 function love.keypressed( key )
 	conn:send( "Pressed: " .. key )
+	if key == "escape" and not server then
+		conn:disconnect()
+	end
 end
+
+function love.draw()
+	map:draw()
+end
+
+
