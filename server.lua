@@ -1,4 +1,5 @@
-local _PATH = (...):match('^(.*[%./])[^%.%/]+$') or ''
+local _PATH = (...):match('^(.*)[%.%/][^%.%/]+$') or ''
+package.path = package.path .. ";" .. _PATH .. "/?.lua"
 
 local socket = require("socket")
 

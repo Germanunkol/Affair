@@ -1,5 +1,7 @@
+local _PATH = (...):match('^(.*)[%.%/][^%.%/]+$') or ''
+package.path = package.path .. ";" .. _PATH .. "/?.lua"
 
-local _PATH = (...):match('^(.*[%./])[^%.%/]+$') or ''
+_PATH = _PATH
 
 local Server = require( "server" )
 local Client = require( "client" )
