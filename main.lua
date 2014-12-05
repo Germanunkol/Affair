@@ -30,6 +30,7 @@ function love.load( args )
 		server.callbacks.received = serverReceived
 		-- set client callbacks:
 		client.callbacks.received = clientReceived
+		client.callbacks.connected = connected
 	else
 		client = network:startClient( args[3], "Germanunkol", port )
 
@@ -98,4 +99,8 @@ function clientReceived( command, msg )
 		end
 		chatLines[#chatLines] = msg
 	end
+end
+
+function connected()
+	print("\tsuccessfully connected.")
 end
