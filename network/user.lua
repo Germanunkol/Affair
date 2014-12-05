@@ -7,6 +7,8 @@ function User:new( connection, playerName, id )
 	o.connection = connection
 	o.playerName = playerName
 	o.id = id
+	o.authorized = false
+	o.synchronized = false
 	
 	return o
 end

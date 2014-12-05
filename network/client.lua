@@ -13,7 +13,7 @@ local userList = {}
 
 local partMessage = ""
 
-function Client:new( address, port, playername )
+function Client:new( address, port, playerName )
 	local o = {}
 	setmetatable( o, self )
 
@@ -22,7 +22,6 @@ function Client:new( address, port, playername )
 	if ok and o.conn then
 		print("Client connected", o.conn)
 		o.conn:settimeout(0)
-		Client.send( o, CMD.PLAYERNAME, playername )
 	else
 		error("Could not connect.")
 		o.conn = nil
@@ -34,6 +33,9 @@ function Client:new( address, port, playername )
 		receivedPlayername = nil,
 		disconnected = nil,
 	}
+
+	o.clientID = nil
+	o.playerName = playerName
 
 	return o
 end
@@ -50,7 +52,6 @@ function Client:update( dt )
 			-- First letter stands for the command:
 			command, content = string.match(data, "(.)(.*)")
 			command = string.byte( command )
-			print("d", data, command, content)
 
 			self:received( command, content )
 		else
@@ -76,12 +77,22 @@ function Client:received( command, msg )
 	print("cl received:", command, msg )
 	if command == CMD.NEW_PLAYER then
 		local id, playerName = string.match( msg, "(.*)|(.*)" )
-		print("user:", id, playerName )
 		local user = User:new( nil, playerName, id )
 		userList[tonumber(id)] = user
 	elseif command == CMD.PLAYER_LEFT then
 		local id = tonumber(msg)
 		userList[id] = nil
+	elseif command == CMD.AUTHORIZED then
+		local authed, reason = string.match( msg, "(.*)|(.*)" )
+		if authed == "true" then
+			self.authorized = true
+		else
+			print( "Not authorized to join server. Reason: " .. reason )
+		end
+		-- When authorized, send player name:
+		self:send( CMD.PLAYERNAME, self.playerName )
+	elseif command == CMD.PLAYERNAME then
+		self.playerName = msg
 	elseif self.callbacks.received then
 		self.callbacks.received( command, msg )
 	end

@@ -10,10 +10,13 @@ Server.__index = Server
 
 local userList = {}
 local numberOfUsers = 0
+local userListByName = {}
 
 local partMessage = ""
 
-function Server:new( port )
+local MAX_PLAYERS = 16
+
+function Server:new( port, maxNumberOfPlayers )
 	local o = {}
 	setmetatable( o, self )
 
@@ -26,10 +29,14 @@ function Server:new( port )
 
 	o.callbacks = {
 		newUser = nil,
-		newMessage = nil,
+		received = nil,
 		receivedPlayername = nil,
 		disconnectedUser = nil,
+		authorize = nil,
+		synchronize = nil,
 	}
+
+	MAX_PLAYERS = maxNumberOfPlayers or 16
 
 	return o
 end
@@ -82,6 +89,9 @@ function Server:update( dt )
 					numberOfUsers = numberOfUsers - 1
 					
 					userList[k] = nil
+					if userListByName[ user.playerName ] then
+						userListByName[ user.playerName ] = nil
+					end
 				else
 					print("Err Received:", msg, data)
 				end
@@ -92,11 +102,35 @@ end
 
 function Server:received( command, msg, user )
 	if command == CMD.PLAYERNAME then
+	
+		-- Check if there is another user with this name.
+		-- If so, increase the number at the end of the name...
+		while userListByName[ msg ] do
+			-- Get a possible number at the end of the username:
+			local base, num = msg:match( "(.+)([%d]+)$" )
+			if num then
+				num = tonumber(num) + 1
+			else
+				-- Start with 'name'2:
+				base = msg
+				num = 2
+			end
+			msg = base .. num
+		end
+
 		user:setPlayerName( msg )
 		if self.callbacks.newPlayername then
 			self.callbacks.newPlayername( user )
 		end
+		userListByName[ user.playerName ] = user
+
+		-- Let user know about the (possibly corrected) username:
+		self:send( CMD.PLAYERNAME, user.playerName, user )
+
+		-- Let all users know about the new user...
 		self:send( CMD.NEW_PLAYER, user.id .. "|" .. user.playerName )
+
+		self:synchronizeUser( user )
 
 	elseif self.callbacks.received then
 		-- If the command is not known, then send it on: 
@@ -104,11 +138,30 @@ function Server:received( command, msg, user )
 	end
 end
 
+function Server:synchronizeUser( user )
+
+	-- Synchronize: Send all other users to this user:
+	for k, u in pairs( userList ) do
+		self:send( CMD.NEW_PLAYER, u.id .. "|" .. u.playerName, user )
+	end
+
+
+	if self.callbacks.synchronize then
+		self.callbacks.synchronize( user )
+	end
+
+	user.synchronized = true
+
+end
+
 function Server:send( command, msg, user )
+	-- Send to only one user:
 	if user then
 		user.connection:send( string.char(command) .. msg .. "\n" )
 		return
 	end
+
+	-- If no user is given, broadcast to all.
 	for k, u in pairs( userList ) do
 		if u.connection then
 			u.connection:send( string.char(command) .. msg .. "\n" )
@@ -119,22 +172,33 @@ end
 function Server:newUser( user )
 	print("New Client! Number of Clients: " .. numberOfUsers )
 
-	-- Synchronize: Send all other users to this user:
-	for k, u in pairs( userList ) do
-		self:send( CMD.NEW_PLAYER, u.id .. "|" .. u.playerName, user )
+	local authorized = true
+	local reason = ""
+	if self.callbacks.authorize then
+		authorized, reason = self.callbacks.authorize( user )
 	end
 
-	if self.callbacks.newUser then
-		self.callbacks.newUser( user )
+	if numberOfUsers >= MAX_PLAYERS then
+		authorized = false
+		reason = "Server full!"
+	end
+
+	if authorized then
+		self:send( CMD.AUTHORIZED, "true|" .. user.id, user )
+		user.authorized = true
+	else
+		self:send( CMD.AUTHORIZED, "false|" .. reason, user )
+		user.connection:shutdown()
 	end
 end
 
 function Server:disconnectedUser( user )
 	print("Client left. Clients: " .. numberOfUsers )
-	user.connection:shutdown()
-	
-	for k, u in pairs( userList ) do
-		self:send( CMD.PLAYER_LEFT, user.id )
+	--user.connection:shutdown()
+	if user.synchronized then
+		for k, u in pairs( userList ) do
+			self:send( CMD.PLAYER_LEFT, user.id )
+		end
 	end
 end
 

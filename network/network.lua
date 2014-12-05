@@ -17,8 +17,8 @@ local PORT = 3410
 local server = nil
 local client = nil
 
-function network:startServer()
-	server = Server:new( PORT )
+function network:startServer( maxNumberOfPlayers )
+	server = Server:new( PORT, maxNumberOfPlayers )
 	return server
 end
 

@@ -19,15 +19,15 @@ function love.load( args )
 		startServer = true
 	end
 	if startServer then
-		server = network:startServer()
-		client = network:startClient( 'localhost', "Germanunkol1" )
+		server = network:startServer( 5 )
+		client = network:startClient( 'localhost', "Germanunkol" )
 
 		-- set server callbacks:
 		server.callbacks.received = serverReceived
 		-- set client callbacks:
 		client.callbacks.received = clientReceived
 	else
-		client = network:startClient( args[3], "Germanunkol2" )
+		client = network:startClient( args[3], "Germanunkol" )
 
 		-- set client callbacks:
 		client.callbacks.received = clientReceived
