@@ -3,8 +3,8 @@ local _PATH = (...):match('^(.*[%./])[^%.%/]+$') or ''
 
 local socket = require("socket")
 
-local User = require( "network/user" )
-local CMD = require( "network/commands" )
+local User = require( "user" )
+local CMD = require( "commands" )
 
 local Client = {}
 Client.__index = Client

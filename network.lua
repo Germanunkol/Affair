@@ -1,8 +1,8 @@
 
 local _PATH = (...):match('^(.*[%./])[^%.%/]+$') or ''
 
-local Server = require( "network/server" )
-local Client = require( "network/client" )
+local Server = require( "server" )
+local Client = require( "client" )
 
 local network = {}
 
@@ -17,12 +17,12 @@ local PORT = 3410
 local server = nil
 local client = nil
 
-function network:startServer( maxNumberOfPlayers )
-	server = Server:new( PORT, maxNumberOfPlayers )
+function network:startServer( maxNumberOfPlayers, port )
+	server = Server:new( port or PORT, maxNumberOfPlayers )
 	return server
 end
 
-function network:startClient( address, playername )
+function network:startClient( address, playername, port )
 
 	if not address then
 		print("No address found. Using default: 'localhost'")
@@ -31,7 +31,7 @@ function network:startClient( address, playername )
 
 	print( "Connecting to:", address )
 
-	client = Client:new( address, PORT, playername )
+	client = Client:new( address, port or PORT, playername )
 	return client
 end
 

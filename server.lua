@@ -2,8 +2,8 @@ local _PATH = (...):match('^(.*[%./])[^%.%/]+$') or ''
 
 local socket = require("socket")
 
-local User = require( "network/user" )
-local CMD = require( "network/commands" )
+local User = require( "user" )
+local CMD = require( "commands" )
 
 local Server = {}
 Server.__index = Server
@@ -194,7 +194,9 @@ end
 
 function Server:disconnectedUser( user )
 	print("Client left. Clients: " .. numberOfUsers )
-	--user.connection:shutdown()
+
+	-- If the other clients already know about this client,
+	-- then tell them to delete him.
 	if user.synchronized then
 		for k, u in pairs( userList ) do
 			self:send( CMD.PLAYER_LEFT, user.id )
