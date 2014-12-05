@@ -32,6 +32,7 @@ function Client:new( address, port, playerName )
 		newUser = nil,
 		received = nil,
 		receivedPlayername = nil,
+		connected = nil,
 		disconnected = nil,
 	}
 
@@ -94,6 +95,10 @@ function Client:received( command, msg )
 		self:send( CMD.PLAYERNAME, self.playerName )
 	elseif command == CMD.PLAYERNAME then
 		self.playerName = msg
+		-- At this point I am fully connected!
+		if self.callbacks.connected then
+			self.callbacks.connected()
+		end
 	elseif self.callbacks.received then
 		self.callbacks.received( command, msg )
 	end
