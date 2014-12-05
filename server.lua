@@ -142,7 +142,9 @@ function Server:synchronizeUser( user )
 
 	-- Synchronize: Send all other users to this user:
 	for k, u in pairs( userList ) do
-		self:send( CMD.NEW_PLAYER, u.id .. "|" .. u.playerName, user )
+		if u.synchronized then
+			self:send( CMD.NEW_PLAYER, u.id .. "|" .. u.playerName, user )
+		end
 	end
 
 
