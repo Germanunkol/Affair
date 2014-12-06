@@ -11,8 +11,10 @@ local Client = {}
 Client.__index = Client
 
 local userList = {}
+local numberOfUsers = 0
 
 local partMessage = ""
+
 
 function Client:new( address, port, playerName )
 	local o = {}
@@ -88,9 +90,11 @@ function Client:received( command, msg )
 		local id, playerName = string.match( msg, "(.*)|(.*)" )
 		local user = User:new( nil, playerName, id )
 		userList[tonumber(id)] = user
+		numberOfUsers = numberOfUsers + 1
 	elseif command == CMD.PLAYER_LEFT then
 		local id = tonumber(msg)
 		userList[id] = nil
+		numberOfUsers = numberOfUsers - 1
 	elseif command == CMD.AUTHORIZED then
 		local authed, reason = string.match( msg, "(.*)|(.*)" )
 		if authed == "true" then
@@ -107,6 +111,7 @@ function Client:received( command, msg )
 		if self.callbacks.connected then
 			self.callbacks.connected()
 		end
+		print( "new playername",  msg )
 	elseif self.callbacks.received then
 		self.callbacks.received( command, msg )
 	end
@@ -119,6 +124,9 @@ end
 
 function Client:getUsers()
 	return userList
+end
+function Client:getNumUsers()
+	return numberOfUsers
 end
 
 function Client:close()

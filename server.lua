@@ -21,9 +21,7 @@ function Server:new( port, maxNumberOfPlayers )
 	local o = {}
 	setmetatable( o, self )
 
-	print("Initialising Server...")
-	o.conn = assert(socket.bind("*", port))
-	o.conn:settimeout(0)
+	print("Initialising Server...") o.conn = assert(socket.bind("*", port)) o.conn:settimeout(0)
 	if o.conn then
 		print("\t-> started.")
 	end
@@ -159,6 +157,9 @@ function Server:synchronizeUser( user )
 		end
 	end
 
+	-- Send this new user to the user as well (let him know about himself)
+	self:send( CMD.NEW_PLAYER, user.id .. "|" .. user.playerName, user )
+
 
 	if self.callbacks.synchronize then
 		self.callbacks.synchronize( user )
@@ -177,7 +178,7 @@ function Server:send( command, msg, user )
 
 	-- If no user is given, broadcast to all.
 	for k, u in pairs( userList ) do
-		if u.connection then
+		if u.connection and u.synchronized then
 			u.connection:send( string.char(command) .. msg .. "\n" )
 		end
 	end
@@ -231,6 +232,9 @@ end
 
 function Server:getUsers()
 	return userList
+end
+function Server:getNumUsers()
+	return numberOfUsers
 end
 
 function Server:close()

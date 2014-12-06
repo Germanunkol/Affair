@@ -9,6 +9,8 @@ function User:new( connection, playerName, id )
 	o.id = id
 	o.authorized = false
 	o.synchronized = false
+
+	o.userData = {}
 	
 	return o
 end
