@@ -21,11 +21,11 @@ function Client:new( address, port, playerName )
 	print("Initialising Client...")
 	ok, o.conn = pcall(socket.connect, address, port)
 	if ok and o.conn then
-		print("Client connected", o.conn)
 		o.conn:settimeout(0)
+		print("Client connected", o.conn)
 	else
-		error("Could not connect.")
 		o.conn = nil
+		error("Could not connect.")
 	end
 
 	o.callbacks = {
@@ -35,6 +35,9 @@ function Client:new( address, port, playerName )
 		connected = nil,
 		disconnected = nil,
 	}
+
+	userList = {}
+	partMessage = ""
 
 	o.clientID = nil
 	o.playerName = playerName
@@ -62,16 +65,20 @@ function Client:update( dt )
 					partMessage = partMessage .. partOfLine
 				end
 			elseif msg == "closed" then
-				self.conn:shutdown()
+				--self.conn:shutdown()
 				print("Disconnected.")
 				if self.callbacks.disconnected then
 					self.callbacks.disconnected()
 				end
 				self.conn = nil
+				return false
 			else
 				print("Err Received:", msg, data)
 			end
 		end
+		return true
+	else	
+		return false
 	end
 end
 
@@ -88,6 +95,7 @@ function Client:received( command, msg )
 		local authed, reason = string.match( msg, "(.*)|(.*)" )
 		if authed == "true" then
 			self.authorized = true
+			print( "Connection authorized by server." )
 		else
 			print( "Not authorized to join server. Reason: " .. reason )
 		end
@@ -111,6 +119,14 @@ end
 
 function Client:getUsers()
 	return userList
+end
+
+function Client:close()
+	if self.conn then
+		--self.conn:shutdown()
+		self.conn:close()
+		print( "closed.")
+	end
 end
 
 return Client

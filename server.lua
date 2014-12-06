@@ -37,6 +37,11 @@ function Server:new( port, maxNumberOfPlayers )
 		synchronize = nil,
 	}
 
+	userList = {}
+	userListByName = {}
+	numberOfUsers = 0
+	partMessage = ""
+
 	MAX_PLAYERS = maxNumberOfPlayers or 16
 
 	return o
@@ -57,6 +62,8 @@ function Server:update( dt )
 			numberOfUsers = numberOfUsers + 1
 
 			self:newUser( newUser )
+
+			print( "Client attempting to connect", id )
 		end
 
 		for k, user in pairs(userList) do			
@@ -85,9 +92,9 @@ function Server:update( dt )
 					--if client.character then
 						--broadcast("CHARACTERDEL|" .. client.playerName)
 					--end
-					self:disconnectedUser( user )
-
 					numberOfUsers = numberOfUsers - 1
+
+					self:disconnectedUser( user )
 					
 					userList[k] = nil
 					if userListByName[ user.playerName ] then
@@ -98,12 +105,16 @@ function Server:update( dt )
 				end
 			end
 		end
+
+		return true
+	else
+		return false
 	end
 end
 
 function Server:received( command, msg, user )
+	print( "server received:", command, msg )
 	if command == CMD.PLAYERNAME then
-	
 		-- Check if there is another user with this name.
 		-- If so, increase the number at the end of the name...
 		while userListByName[ msg ] do
@@ -201,9 +212,11 @@ function Server:disconnectedUser( user )
 	-- If the other clients already know about this client,
 	-- then tell them to delete him.
 	if user.synchronized then
-		for k, u in pairs( userList ) do
-			self:send( CMD.PLAYER_LEFT, user.id )
-		end
+		self:send( CMD.PLAYER_LEFT, user.id )
+	end
+	
+	if self.callbacks.disconnectedUser then
+		self.callbacks.disconnectedUser( user )
 	end
 end
 
@@ -218,6 +231,16 @@ end
 
 function Server:getUsers()
 	return userList
+end
+
+function Server:close()
+	if self.conn then
+		for k, u in pairs( userList ) do
+			u.connection:shutdown()
+		end
+		self.conn:close()
+	end
+	self.conn = nil
 end
 
 return Server
