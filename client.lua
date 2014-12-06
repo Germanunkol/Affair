@@ -30,6 +30,7 @@ function Client:new( address, port, playerName )
 	end
 
 	o.callbacks = {
+		authorized = nil,
 		newUser = nil,
 		received = nil,
 		receivedPlayername = nil,
@@ -87,7 +88,7 @@ function Client:update( dt )
 end
 
 function Client:received( command, msg )
-	print("cl received:", command, msg )
+	print("cl received:", command, msg:sub(1, 50) )
 	if command == CMD.NEW_PLAYER then
 		local id, playerName = string.match( msg, "(.*)|(.*)" )
 		local user = User:new( nil, playerName, id )
@@ -102,11 +103,16 @@ function Client:received( command, msg )
 		if authed == "true" then
 			self.authorized = true
 			print( "Connection authorized by server." )
+			-- When authorized, send player name:
+			self:send( CMD.PLAYERNAME, self.playerName )
 		else
 			print( "Not authorized to join server. Reason: " .. reason )
 		end
-		-- When authorized, send player name:
-		self:send( CMD.PLAYERNAME, self.playerName )
+		
+		if self.callbacks.authorized then
+			self.callbacks.authorized( self.authorized, reason )
+		end
+
 	elseif command == CMD.PLAYERNAME then
 		self.playerName = msg
 		-- At this point I am fully connected!

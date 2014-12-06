@@ -17,7 +17,7 @@ local partMessage = ""
 
 local MAX_PLAYERS = 16
 
-function Server:new( port, maxNumberOfPlayers )
+function Server:new( maxNumberOfPlayers, port )
 	local o = {}
 	setmetatable( o, self )
 
@@ -215,7 +215,7 @@ function Server:newUser( user )
 		authorized, reason = self.callbacks.authorize( user )
 	end
 
-	if numberOfUsers >= MAX_PLAYERS then
+	if numberOfUsers > MAX_PLAYERS then
 		authorized = false
 		reason = "Server full!"
 	end
