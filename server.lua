@@ -33,6 +33,7 @@ function Server:new( port, maxNumberOfPlayers )
 		disconnectedUser = nil,
 		authorize = nil,
 		synchronize = nil,
+		customDataChanged = nil,
 	}
 
 	userList = {}
@@ -142,6 +143,19 @@ function Server:received( command, msg, user )
 
 		self:synchronizeUser( user )
 
+	elseif command == CMD.USER_VALUE then
+		local keyType, key, valueType, value = string.match( msg, "(.*)|(.*)|(.*)|(.*)" )
+		key = stringToType( key, keyType )
+		value = stringToType( value, valueType )
+		user.customData[key] = value
+
+		-- Let others know about this value:
+		self:send( CMD.USER_VALUE, user.id .. "|" .. msg )
+
+		if self.callbacks.customDataChanged then
+			self.callback.customDataChanged( user, value, key )
+		end
+
 	elseif self.callbacks.received then
 		-- If the command is not known, then send it on: 
 		self.callbacks.received( command, msg, user )
@@ -154,12 +168,20 @@ function Server:synchronizeUser( user )
 	for k, u in pairs( userList ) do
 		if u.synchronized then
 			self:send( CMD.NEW_PLAYER, u.id .. "|" .. u.playerName, user )
+
+			-- Synchronize any custom data of all users:
+			for key, value in pairs( u.customData )  do
+				local keyType = type( key )
+				local valueType = type( value )
+				local msg = u.id .. "|" .. keyType .. "|" .. tostring(key) ..
+					"|" .. valueType .. "|" .. tostring(value)
+				self:send( CMD.USER_VALUE, msg, user )
+			end
 		end
 	end
 
 	-- Send this new user to the user as well (let him know about himself)
 	self:send( CMD.NEW_PLAYER, user.id .. "|" .. user.playerName, user )
-
 
 	if self.callbacks.synchronize then
 		self.callbacks.synchronize( user )

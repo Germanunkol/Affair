@@ -10,7 +10,7 @@ function User:new( connection, playerName, id )
 	o.authorized = false
 	o.synchronized = false
 
-	o.userData = {}
+	o.customData = {}
 	
 	return o
 end

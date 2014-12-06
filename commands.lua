@@ -6,6 +6,7 @@ local COMMANDS =
 	NEW_PLAYER = 4,
 	AUTHORIZED = 5,
 	PLAYER_LEFT = 7,
+	USER_VALUE = 8,
 }
 
 return COMMANDS

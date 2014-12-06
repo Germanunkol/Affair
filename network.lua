@@ -75,10 +75,20 @@ function network:getUsers()
 	end
 end
 
-function network:send( command, msg )
+--[[function network:send( command, msg )
 	if client then
 		client:send( command, msg )
 	end
+end]]
+
+function stringToType( value, goalType )
+	if goalType == "number" then
+		return tonumber(value)
+	elseif goalType == "boolean" then
+		return value == "true" and true or false
+	end
+	-- if it was meant to be a string, return it as such:
+	return value
 end
 
 return network

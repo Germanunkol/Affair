@@ -15,7 +15,6 @@ local numberOfUsers = 0
 
 local partMessage = ""
 
-
 function Client:new( address, port, playerName )
 	local o = {}
 	setmetatable( o, self )
@@ -36,6 +35,7 @@ function Client:new( address, port, playerName )
 		receivedPlayername = nil,
 		connected = nil,
 		disconnected = nil,
+		customDataChanged = nil,
 	}
 
 	userList = {}
@@ -112,6 +112,26 @@ function Client:received( command, msg )
 			self.callbacks.connected()
 		end
 		print( "new playername",  msg )
+	elseif command == CMD.USER_VALUE then
+		local id, keyType, key, valueType, value = string.match( msg, "(.*)|(.*)|(.*)|(.*)|(.*)" )
+		print( id, keyType, key, valueType, value )
+
+		key = stringToType( key, keyType )
+		value = stringToType( value, valueType )
+
+		print(key, value)
+
+		id = tonumber( id )
+
+		userList[id].customData[key] = value
+
+		print( "user data:" )
+		printTable( userList[id].customData )
+
+		if self.callbacks.customDataChanged then
+			self.callback.customDataChanged( user, value, key )
+		end
+
 	elseif self.callbacks.received then
 		self.callbacks.received( command, msg )
 	end
@@ -135,6 +155,13 @@ function Client:close()
 		self.conn:close()
 		print( "closed.")
 	end
+end
+
+function Client:setUserValue( key, value )
+	local keyType = type( key )
+	local valueType = type( value )
+	self:send( CMD.USER_VALUE, keyType .. "|" .. tostring(key) ..
+			"|" .. valueType .. "|" .. tostring(value) )
 end
 
 return Client
