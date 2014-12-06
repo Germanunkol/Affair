@@ -194,14 +194,14 @@ end
 function Server:send( command, msg, user )
 	-- Send to only one user:
 	if user then
-		user.connection:send( string.char(command) .. msg .. "\n" )
+		user.connection:send( string.char(command) .. (msg or "") .. "\n" )
 		return
 	end
 
 	-- If no user is given, broadcast to all.
 	for k, u in pairs( userList ) do
 		if u.connection and u.synchronized then
-			u.connection:send( string.char(command) .. msg .. "\n" )
+			u.connection:send( string.char(command) .. (msg or "") .. "\n" )
 		end
 	end
 end

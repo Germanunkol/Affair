@@ -147,7 +147,7 @@ end
 
 function Client:send( command, msg )
 	print("client send:", command, msg)
-	self.conn:send( string.char(command) .. msg .. "\n" )
+	self.conn:send( string.char(command) .. (msg or "") .. "\n" )
 end
 
 function Client:getUsers()
