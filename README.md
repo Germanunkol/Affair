@@ -8,6 +8,8 @@ Features:
 - Callbacks for important events (new user, disconnected etc.) can be defined.
 - Server is independent of Love and could be running using plain Lua.
 Make sure LuaSocket is installed in this case.
+- Automatic handling of usernames... (Don't need to use them if you don't need them.)
+- Automatically synched user values - want to synch the colour of your player with other servers, and let newly joining clients also know about it? This is all handled by this engine.
 
 - TCP (reliable connection) only.
 

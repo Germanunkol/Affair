@@ -44,6 +44,8 @@ function Client:new( address, port, playerName )
 	o.clientID = nil
 	o.playerName = playerName
 
+	numberOfUsers = 0
+
 	return o
 end
 
