@@ -27,13 +27,12 @@ function Server:new( maxNumberOfPlayers, port )
 	end
 
 	o.callbacks = {
-		newUser = nil,
 		received = nil,
 		receivedPlayername = nil,
 		disconnectedUser = nil,
 		authorize = nil,
-		synchronize = nil,
 		customDataChanged = nil,
+		userFullyConnected = nil,
 	}
 
 	userList = {}
@@ -190,6 +189,11 @@ function Server:synchronizeUser( user )
 
 	user.synchronized = true
 
+	-- Let the program know that this user is now considered fully synchronized
+	if self.callbacks.userFullyConnected then
+		self.callbacks.userFullyConnected( user )
+	end
+
 end
 
 function Server:send( command, msg, user )
@@ -268,6 +272,17 @@ function Server:close()
 		self.conn:close()
 	end
 	self.conn = nil
+end
+
+function Server:setUserValue( user, key, value )
+
+	user.customData[key] = value
+
+	-- Broadcast to other users:
+	local keyType = type( key )
+	local valueType = type( value )
+	self:send( CMD.USER_VALUE, user.id .. "|" ..  keyType .. "|" .. tostring(key) ..
+			"|" .. valueType .. "|" .. tostring(value) )
 end
 
 return Server

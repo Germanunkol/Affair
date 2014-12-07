@@ -116,7 +116,7 @@ function Client:received( command, msg )
 	elseif command == CMD.PLAYERNAME then
 		local id, playerName = string.match( msg, "(.*)|(.*)" )
 		self.playerName = playerName
-		self.clientID = id
+		self.clientID = tonumber(id)
 		-- At this point I am fully connected!
 		if self.callbacks.connected then
 			self.callbacks.connected()
