@@ -135,8 +135,9 @@ function Server:received( command, msg, user )
 		end
 		userListByName[ user.playerName ] = user
 
-		-- Let user know about the (possibly corrected) username:
-		self:send( CMD.PLAYERNAME, user.playerName, user )
+		-- Let user know about the (possibly corrected) username and his
+		-- client id:
+		self:send( CMD.PLAYERNAME, user.id .. "|" .. user.playerName, user )
 
 		-- Let all users know about the new user...
 		self:send( CMD.NEW_PLAYER, user.id .. "|" .. user.playerName )
