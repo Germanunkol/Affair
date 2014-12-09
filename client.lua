@@ -1,11 +1,10 @@
 
-local _PATH = (...):match('^(.*)[%.%/][^%.%/]+$') or ''
-package.path = package.path .. ";" .. _PATH .. "/?.lua"
+local BASE = (...):match("(.-)[^%.]+$")
 
 local socket = require("socket")
 
-local User = require( "user" )
-local CMD = require( "commands" )
+local User = require( BASE .. "user" )
+local CMD = require( BASE .. "commands" )
 
 local Client = {}
 Client.__index = Client
@@ -91,8 +90,9 @@ function Client:received( command, msg )
 	print("cl received:", command, msg:sub(1, 50) )
 	if command == CMD.NEW_PLAYER then
 		local id, playerName = string.match( msg, "(.*)|(.*)" )
+		id = tonumber(id)
 		local user = User:new( nil, playerName, id )
-		userList[tonumber(id)] = user
+		userList[id] = user
 		numberOfUsers = numberOfUsers + 1
 	elseif command == CMD.PLAYER_LEFT then
 		local id = tonumber(msg)
@@ -124,12 +124,9 @@ function Client:received( command, msg )
 		print( "new playername",  msg )
 	elseif command == CMD.USER_VALUE then
 		local id, keyType, key, valueType, value = string.match( msg, "(.*)|(.*)|(.*)|(.*)|(.*)" )
-		print( id, keyType, key, valueType, value )
 
 		key = stringToType( key, keyType )
 		value = stringToType( value, valueType )
-
-		print(key, value)
 
 		id = tonumber( id )
 

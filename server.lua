@@ -1,10 +1,9 @@
-local _PATH = (...):match('^(.*)[%.%/][^%.%/]+$') or ''
-package.path = package.path .. ";" .. _PATH .. "/?.lua"
+local BASE = (...):match("(.-)[^%.]+$")
 
 local socket = require("socket")
 
-local User = require( "user" )
-local CMD = require( "commands" )
+local User = require( BASE .. "user" )
+local CMD = require( BASE .. "commands" )
 
 local Server = {}
 Server.__index = Server

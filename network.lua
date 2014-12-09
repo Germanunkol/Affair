@@ -1,10 +1,7 @@
-local _PATH = (...):match('^(.*)[%.%/][^%.%/]+$') or ''
-package.path = package.path .. ";" .. _PATH .. "/?.lua"
+local BASE = (...):match("(.-)[^%.]+$")
 
-_PATH = _PATH
-
-local Server = require( "server" )
-local Client = require( "client" )
+local Server = require( BASE .. "server" )
+local Client = require( BASE .. "client" )
 
 local network = {}
 
