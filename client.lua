@@ -172,4 +172,13 @@ function Client:getID()
 	return self.clientID
 end
 
+function Client:getUserValue( key )
+	if not self.clientID then return nil end
+	local u = userList[self.clientID]
+	if u then
+		return u.customData[key]
+	end
+	return nil
+end
+
 return Client
