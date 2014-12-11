@@ -24,11 +24,11 @@ end
 function network:startClient( address, playername, port )
 
 	if not address or #address == 0 then
-		print("No address found. Using default: 'localhost'")
+		print("[NET] No address found. Using default: 'localhost'")
 		address = "localhost"
 	end
 
-	print( "Connecting to:", address )
+	print( "[NET] Connecting to:", address )
 
 	client = Client:new( address, port or PORT, playername )
 	assert(client, "Could not connect." )
@@ -36,7 +36,7 @@ function network:startClient( address, playername, port )
 end
 
 function network:closeConnection()
-	print("Closing all connections.")
+	print("[NET] Closing all connections.")
 	if client then
 		client:close()
 	end
@@ -51,7 +51,6 @@ function network:update( dt )
 		-- the connection has been closed.
 		if not server:update( dt ) then
 			server = nil
-			print( "CLOSED SERVER" )
 		end
 	end
 	if client then
@@ -59,7 +58,6 @@ function network:update( dt )
 		-- the connection has been closed.
 		if not client:update( dt ) then
 			client = nil
-			print( "CLOSED CLIENT" )
 		end
 	end
 end

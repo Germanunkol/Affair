@@ -20,9 +20,9 @@ function Server:new( maxNumberOfPlayers, port )
 	local o = {}
 	setmetatable( o, self )
 
-	print("Initialising Server...") o.conn = assert(socket.bind("*", port)) o.conn:settimeout(0)
+	print("[NET] Initialising Server...") o.conn = assert(socket.bind("*", port)) o.conn:settimeout(0)
 	if o.conn then
-		print("\t-> started.")
+		print("[NET]\t-> started.")
 	end
 
 	o.callbacks = {
@@ -59,7 +59,7 @@ function Server:update( dt )
 
 			self:newUser( newUser )
 
-			print( "Client attempting to connect", id )
+			print( "[NET] Client attempting to connect", id )
 		end
 
 		for k, user in pairs(userList) do			
@@ -97,7 +97,7 @@ function Server:update( dt )
 						userListByName[ user.playerName ] = nil
 					end
 				else
-					print("Err Received:", msg, data)
+					print("[NET] Err Received:", msg, data)
 				end
 			end
 		end
@@ -109,7 +109,6 @@ function Server:update( dt )
 end
 
 function Server:received( command, msg, user )
-	print( "server received:", command, msg )
 	if command == CMD.PLAYERNAME then
 		-- Check if there is another user with this name.
 		-- If so, increase the number at the end of the name...
@@ -162,7 +161,6 @@ end
 
 function Server:synchronizeUser( user )
 
-	print("synchronizing user...")
 	-- Synchronize: Send all other users to this user:
 	for k, u in pairs( userList ) do
 		if u.synchronized then
@@ -196,15 +194,12 @@ function Server:synchronizeUser( user )
 end
 
 function Server:send( command, msg, user )
-	print("Sening message of length:", msg and #msg or 0 )
-
 	-- Send to only one user:
 	if user then
 		local fullMsg = string.char(command) .. (msg or "") .. "\n"
 		--user.connection:send( string.char(command) .. (msg or "") .. "\n" )
 		local result, err, num = user.connection:send( fullMsg )
-		while result == nil do
-			if err == "closed" then break end
+		while err == "timeout" do
 			fullMsg = fullMsg:sub( num+1, #fullMsg )
 			result, err, num = user.connection:send( fullMsg )
 		end
@@ -221,7 +216,7 @@ function Server:send( command, msg, user )
 end
 
 function Server:newUser( user )
-	print("New Client! Number of Clients: " .. numberOfUsers )
+	print("[NET] New Client! Number of Clients: " .. numberOfUsers )
 
 	local authorized = true
 	local reason = ""
@@ -244,7 +239,7 @@ function Server:newUser( user )
 end
 
 function Server:disconnectedUser( user )
-	print("Client left. Clients: " .. numberOfUsers )
+	print("[NET] Client left. Clients: " .. numberOfUsers )
 
 	-- If the other clients already know about this client,
 	-- then tell them to delete him.

@@ -19,14 +19,14 @@ function Client:new( address, port, playerName )
 	local o = {}
 	setmetatable( o, self )
 
-	print("Initialising Client...")
+	print("[NET] Initialising Client...")
 	o.conn = socket.tcp()
-	o.conn:settimeout(1)
+	o.conn:settimeout(5)
 	local ok, msg = o.conn:connect( address, port )
 	--ok, o.conn = pcall(o.conn.connect, o.conn, address, port)
 	if ok and o.conn then
 		o.conn:settimeout(0)
-		print("Client connected", o.conn)
+		print("[NET] -> Client connected", o.conn)
 	else
 		o.conn = nil
 		return nil
@@ -34,11 +34,10 @@ function Client:new( address, port, playerName )
 
 	o.callbacks = {
 		authorized = nil,
-		newUser = nil,
 		received = nil,
-		receivedPlayername = nil,
 		connected = nil,
 		disconnected = nil,
+		newUser = nil,
 		customDataChanged = nil,
 	}
 
@@ -56,9 +55,6 @@ end
 function Client:update( dt )
 	if self.conn then
 		local data, msg, partOfLine = self.conn:receive()
-		if msg ~= "timeout" then
-			print("\n(", data, msg, partOfLine, ")\n")
-		end
 		if data then
 			if #partMessage > 0 then
 				data = partMessage .. data
@@ -77,14 +73,14 @@ function Client:update( dt )
 				end
 			elseif msg == "closed" then
 				--self.conn:shutdown()
-				print("Disconnected.")
+				print("[NET] Disconnected.")
 				if self.callbacks.disconnected then
 					self.callbacks.disconnected()
 				end
 				self.conn = nil
 				return false
 			else
-				print("Err Received:", msg, data)
+				print("[NET] Err Received:", msg, data)
 			end
 		end
 		return true
@@ -94,13 +90,15 @@ function Client:update( dt )
 end
 
 function Client:received( command, msg )
-	print("cl received:", command, msg:sub(1, 50), #msg )
 	if command == CMD.NEW_PLAYER then
 		local id, playerName = string.match( msg, "(.*)|(.*)" )
 		id = tonumber(id)
 		local user = User:new( nil, playerName, id )
 		userList[id] = user
 		numberOfUsers = numberOfUsers + 1
+		if self.callbacks.newUser then
+			self.callbacks.newUser( user )
+		end
 	elseif command == CMD.PLAYER_LEFT then
 		local id = tonumber(msg)
 		userList[id] = nil
@@ -109,11 +107,11 @@ function Client:received( command, msg )
 		local authed, reason = string.match( msg, "(.*)|(.*)" )
 		if authed == "true" then
 			self.authorized = true
-			print( "Connection authorized by server." )
+			print( "[NET] Connection authorized by server." )
 			-- When authorized, send player name:
 			self:send( CMD.PLAYERNAME, self.playerName )
 		else
-			print( "Not authorized to join server. Reason: " .. reason )
+			print( "[NET] Not authorized to join server. Reason: " .. reason )
 		end
 		
 		if self.callbacks.authorized then
@@ -128,7 +126,6 @@ function Client:received( command, msg )
 		if self.callbacks.connected then
 			self.callbacks.connected()
 		end
-		print( "new playername",  msg )
 		--self.conn:settimeout(5)
 		--print("changed timeout.")
 	elseif command == CMD.USER_VALUE then
@@ -152,14 +149,10 @@ end
 
 function Client:send( command, msg )
 
-	print("client send:", command, msg)
-	--self.conn:send( string.char(command) .. (msg or "") .. "\n" )
-
 	local fullMsg = string.char(command) .. (msg or "") .. "\n"
 
 	local result, err, num = self.conn:send( fullMsg )
-	while result == nil do
-		if err == "closed" then break end
+	while err == "timeout" do
 		fullMsg = fullMsg:sub( num+1, #fullMsg )
 		result, err, num = self.conn:send( fullMsg )
 	end
@@ -178,7 +171,7 @@ function Client:close()
 	if self.conn then
 		--self.conn:shutdown()
 		self.conn:close()
-		print( "closed.")
+		print( "[NET] Closed.")
 	end
 end
 

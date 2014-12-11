@@ -34,6 +34,7 @@ function love.load( args )
 
 		-- set server callbacks:
 		server.callbacks.received = serverReceived
+
 		-- set client callbacks:
 		client.callbacks.received = clientReceived
 		client.callbacks.connected = connected
@@ -41,7 +42,10 @@ function love.load( args )
 		client = network:startClient( args[3], "Germanunkol", port )
 
 		-- set client callbacks:
+		client.callbacks.authorized = authorized
+		client.callbacks.connected = connected
 		client.callbacks.received = clientReceived
+		client.callbacks.disconnected = disconnected
 	end
 end
 
@@ -73,21 +77,23 @@ end
 function love.draw()
 	love.graphics.setColor( 255,255,255, 255 )
 	local users = network:getUsers()
-	local x, y = 20, 10
-	for k, u in pairs( users ) do
-		love.graphics.print( u.playerName, x, y )
-		y = y + 20
-	end
+	if users then
+		local x, y = 20, 10
+		for k, u in pairs( users ) do
+			love.graphics.print( u.playerName, x, y )
+			y = y + 20
+		end
 
-	y = love.graphics.getHeight() - 10
-	for k = 1, #chatLines do
-		love.graphics.print( chatLines[k], x, y )
-		y = y - 20
-	end
-	if chatting then
-		love.graphics.setColor( 128, 128, 128, 255 )
-		love.graphics.print( "Enter text: " .. text, x - 5, y )
-		y = y - 20
+		y = love.graphics.getHeight() - 10
+		for k = 1, #chatLines do
+			love.graphics.print( chatLines[k], x, y )
+			y = y - 20
+		end
+		if chatting then
+			love.graphics.setColor( 128, 128, 128, 255 )
+			love.graphics.print( "Enter text: " .. text, x - 5, y )
+			y = y - 20
+		end
 	end
 end
 
@@ -108,6 +114,7 @@ function clientReceived( command, msg )
 		-- Re-add line breaks which were removed for sending purposes:
 		local map, count = msg:gsub( "|", "\n" )
 		print( "Received map:\n" .. map .. "\nNumber of lines: " .. count .. "\nNumber of characters: " .. #map )
+		client:send( 128, msg )
 	end
 end
 

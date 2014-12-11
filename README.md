@@ -58,3 +58,18 @@ function disconnected( user )
 end
 ```
 
+##### Client: #####
+
+**client.callbacks.authorized( auth, reason ):** This is called when the server responds to the authorization request by the client (which the client will always to automatically when connecting). The 'auth' paramter will be _true_ or _false_ depending on whether the client has been authorized. The "reason" parameter will hold a message in case the client has not been authorized, telling it, why.
+
+**client.callbacks.connected():** Called on the client when the connection process has finished (similar to the server.callbacks.userFullyConnected callback called on the server) and the client is synchronized. At this point, the client is 'equal' to all other clients who have previously connected and has their user values, names and IDs.
+
+**client.callbacks.received( command, msg ):** Called when the client gets a message from the server (i.e. when server:send( command, msg ) has been called on the server.
+
+**client.callbacks.disconnected():** Called when the client has been disconnected for some reason.
+
+**client.callbacks.newUser( user ):** Called on all clients when a new user has been synchronized.
+Note: This is not called on the client who is joining (i.e. the one who has just been synchronized).
+Note: You do not need to keep a list of all users. Use client:getUsers() to get an up-to-date list of all currently connected users.
+
+
