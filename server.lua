@@ -234,15 +234,16 @@ function Server:send( command, msg, user )
 	-- CMD.LONG_MSG|3 of n|msg part 3
 	-- CMD.LONG_MSG| ...
 	-- CMD.LONG_MSG|n of n|msg part n (rest)
-	if msg and #msg > 512 then
+	if msg and #msg > 512 and false then
 		-- Important: send along the original command!
 		msg = string.char(command) .. msg
 
 		local numMessages = math.ceil( #msg/512 )
 		for i = 1, numMessages do
-			local subMsg = string.char(CMD.LONG_MSG) .. i .. " of " .. numMessages .. "|" .. msg:sub( (i-1)*512 + 1, i*512 )
-			user.connection:send( subMsg .. "\n" )
-			print("\t->" .. #subMsg )
+			local header = string.char(CMD.LONG_MSG) .. i .. " of " .. numMessages .. "|"
+			local part = msg:sub( (i-1)*512 + 1, i*512 )
+			user.connection:send( header .. subMsg .. "\n" )
+			print("\t->(" .. #header .. ") " ..  header .. subMsg )
 		end
 	end
 

@@ -152,7 +152,11 @@ function Client:received( command, msg )
 		i, num = tonumber(i), tonumber(numum)
 
 		piecesOfLargeMessage[i] = part
-		print("length of part msg:", #part)
+		local len = 0
+		for k = 1, i do
+			len = len + #piecesOfLargeMessage[i]
+		end
+		print("length of part msg:", #part, "full: ", len)
 
 		-- Since the pieces are sent in order, when piece "num" is received, then
 		-- the full message is here.
