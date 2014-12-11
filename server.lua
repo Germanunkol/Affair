@@ -242,6 +242,7 @@ function Server:send( command, msg, user )
 		for i = 1, numMessages do
 			local subMsg = string.char(CMD.LONG_MSG) .. i .. " of " .. numMessages .. "|" .. msg:sub( (i-1)*512 + 1, i*512 )
 			user.connection:send( subMsg .. "\n" )
+			print("\t->" .. #subMsg )
 		end
 	end
 
@@ -288,7 +289,7 @@ function Server:disconnectedUser( user )
 	-- If the other clients already know about this client,
 	-- then tell them to delete him.
 	if user.synchronized then
-		self:send( CMD.PLAYER_LEFT, user.id )
+		self:send( CMD.PLAYER_LEFT, tostring(user.id) )
 	end
 	
 	if self.callbacks.disconnectedUser then
