@@ -249,7 +249,15 @@ function Server:send( command, msg, user )
 
 	-- Send to only one user:
 	if user then
-		user.connection:send( string.char(command) .. (msg or "") .. "\n" )
+		local fullMsg = string.char(command) .. (msg or "") .. "\n"
+		--user.connection:send( string.char(command) .. (msg or "") .. "\n" )
+		local result, err, num = user.connection:send( fullMsg )
+		while result == nil do
+			if err == "closed" then break end
+			fullMsg = fullMsg:sub( num+1, #fullMsg )
+			result, err, num = user.connection:send( fullMsg )
+		end
+
 		return
 	end
 
