@@ -145,36 +145,6 @@ function Client:received( command, msg )
 			self.callback.customDataChanged( user, value, key )
 		end
 
-	elseif command == CMD.LONG_MSG then
-		-- If this is just part of a longer message then...
-		-- i is the part, num is the number of pieces to expect:
-		local i, num, part = msg:match("(.-) of (.-)|(.*)")
-		i, num = tonumber(i), tonumber(numum)
-
-		piecesOfLargeMessage[i] = part
-		local len = 0
-		for k = 1, i do
-			len = len + #piecesOfLargeMessage[i]
-		end
-		print("length of part msg:", #part, "full: ", len)
-
-		-- Since the pieces are sent in order, when piece "num" is received, then
-		-- the full message is here.
-		if i == num then
-			local reconstructedString = ""
-			for k = 1, num do
-				reconstructedString = reconstructedString .. piecesOfLargeMessage[k]
-			end
-
-			-- from the full message, reconstruct the command and actual message:
-			local originalCommand = string.byte(reconstructedString:sub(1,1))
-			local originalMessage = reconstructedString:sub(2,#reconstructedString)
-			self:receive( originalCommand, originalMessage )
-
-			-- Restore for future use:
-			piecesOfLargeMessage = {}
-		end
-
 	elseif self.callbacks.received then
 		self.callbacks.received( command, msg )
 	end
@@ -182,23 +152,19 @@ end
 
 function Client:send( command, msg )
 
-	-- If the string is too long, take it apart and put it into shorter messages of the form:
-	-- CMD.LONG_MSG|1 of n|msg part 1
-	-- CMD.LONG_MSG|2 of n|msg part 2
-	-- CMD.LONG_MSG| ...
-	if msg and #msg > 512 then
-		-- Important: send along the original command!
-		msg = string.char(command) .. msg
+	print("client send:", command, msg)
+	--self.conn:send( string.char(command) .. (msg or "") .. "\n" )
 
-		local numMessages = math.ceil( #msg/512 )
-		for i = 1, numMessages do
-			local subMsg = string.char(CMD.LONG_MSG) .. "|" .. " of " .. numMessages .. "|" .. msg:sub( (i-1)*512 + 1, i*512 )
-			self.conn:send( subMsg .. "\n" )
-		end
+	local fullMsg = string.char(command) .. (msg or "") .. "\n"
+
+	local result, err, num = self.conn:send( fullMsg )
+	while result == nil do
+		if err == "closed" then break end
+		fullMsg = fullMsg:sub( num+1, #fullMsg )
+		result, err, num = self.conn:send( fullMsg )
 	end
 
-	print("client send:", command, msg)
-	self.conn:send( string.char(command) .. (msg or "") .. "\n" )
+	return
 end
 
 function Client:getUsers()

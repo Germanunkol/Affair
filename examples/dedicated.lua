@@ -95,7 +95,7 @@ function sleep( sec )
 end
 
 -- Fill the map string with something long for testing purposes:
-for y = 1, 5000 do
+for y = 1, 20000 do
 	for x = 1, 30 do
 		if math.random(10) == 1 then
 			myMapString = myMapString .. math.random(9)
