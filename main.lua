@@ -1,8 +1,14 @@
 
 network = require( "network" )
 
-local CMD = {
+-- COMMANDs are used to identify messages.
+-- Custom commands MUST be numbers between (including) 128 and 255.
+-- Make sure these are the same on client and server.
+-- Ideally, put them into a seperate file and include it from both client
+-- and server. Here, I leave it in the main file for readability.
+local COMMAND = {
 	CHAT = 128,
+	MAP = 129,
 }
 
 local chatLines = { "", "", "", "", "", "", "" }
@@ -48,8 +54,8 @@ local chatting = false
 
 function love.keypressed( key )
 	if key == "return" then
-		if chatting then
-			network:send( CMD.CHAT, text )
+		if chatting and client then
+			client:send( COMMAND.CHAT, text ).
 			text = ""
 			chatting = false
 		else
@@ -86,18 +92,22 @@ function love.draw()
 end
 
 function serverReceived( command, msg, user )
-	if command == CMD.CHAT then
+	if command == COMMAND.CHAT then
 		-- broadcast chat messages on to all players
 		server:send( command, user.playerName .. ": " .. msg )
 	end
 end
 
 function clientReceived( command, msg )
-	if command == CMD.CHAT then
+	if command == COMMAND.CHAT then
 		for k = 1, #chatLines-1 do
 			chatLines[k] = chatLines[k+1]
 		end
 		chatLines[#chatLines] = msg
+	elseif command == COMMAND.MAP then
+		-- Re-add line breaks which were removed for sending purposes:
+		local map, count = msg:gsub( "|", "\n" )
+		print( "Received map:\n" .. map .. "\nNumber of lines: " .. count .. "\nNumber of characters: " .. #map )
 	end
 end
 

@@ -27,7 +27,6 @@ function Server:new( maxNumberOfPlayers, port )
 
 	o.callbacks = {
 		received = nil,
-		receivedPlayername = nil,
 		disconnectedUser = nil,
 		authorize = nil,
 		customDataChanged = nil,
@@ -152,11 +151,11 @@ function Server:received( command, msg, user )
 		self:send( CMD.USER_VALUE, user.id .. "|" .. msg )
 
 		if self.callbacks.customDataChanged then
-			self.callback.customDataChanged( user, value, key )
+			self.callbacks.customDataChanged( user, value, key )
 		end
 
 	elseif self.callbacks.received then
-		-- If the command is not known, then send it on: 
+		-- If the command is not known by the engine, then send it on to the above layer:
 		self.callbacks.received( command, msg, user )
 	end
 end
@@ -197,10 +196,10 @@ function Server:synchronizeUser( user )
 end
 
 function Server:send( command, msg, user )
+
 	-- Send to only one user:
 	if user then
 		user.connection:send( string.char(command) .. (msg or "") .. "\n" )
-		print( user.connection, command, msg:sub(1,100) )
 		return
 	end
 

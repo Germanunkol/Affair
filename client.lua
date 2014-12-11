@@ -74,7 +74,6 @@ function Client:update( dt )
 				if #partOfLine > 0 then
 					partMessage = partMessage .. partOfLine
 				end
-				print("\n(", data, msg, partOfLine, #partOfLine, ")\n")
 			elseif msg == "closed" then
 				--self.conn:shutdown()
 				print("Disconnected.")
