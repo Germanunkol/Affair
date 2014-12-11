@@ -154,6 +154,36 @@ function Server:received( command, msg, user )
 			self.callbacks.customDataChanged( user, value, key )
 		end
 
+	elseif command == CMD.LONG_MSG then
+		-- If this is just part of a longer message then...
+		-- i is the part, num is the number of pieces to expect:
+		local i, num, part = msg:match("(.-) of (.-)|(.*)")
+		i, num = tonumber(i), tonumber(numum)
+
+		if not piecesOfLargeMessage[user.id] then
+			piecesOfLargeMessage[user.id] = {}
+		end
+
+		piecesOfLargeMessage[user.id][i] = part
+		print("length of part msg:", #part)
+
+		-- Since the pieces are sent in order, when piece "num" is received, then
+		-- the full message is here.
+		if i == num then
+			local reconstructedString = ""
+			for k = 1, num do
+				reconstructedString = reconstructedString .. piecesOfLargeMessage[k]
+			end
+
+			-- from the full message, reconstruct the command and actual message:
+			local originalCommand = string.byte(reconstructedString:sub(1,1))
+			local originalMessage = reconstructedString:sub(2,#reconstructedString)
+			self:receive( originalCommand, originalMessage, user )
+
+			-- Restore for future use:
+			piecesOfLargeMessage[user.id] = {}
+		end
+
 	elseif self.callbacks.received then
 		-- If the command is not known by the engine, then send it on to the above layer:
 		self.callbacks.received( command, msg, user )
@@ -196,6 +226,24 @@ function Server:synchronizeUser( user )
 end
 
 function Server:send( command, msg, user )
+	print("Sening message of length:", msg and #msg or 0 )
+
+	-- If the string is too long, take it apart and put it into shorter messages of the form:
+	-- CMD.LONG_MSG|1 of n|[command] msg part 1
+	-- CMD.LONG_MSG|2 of n|msg part 2
+	-- CMD.LONG_MSG|3 of n|msg part 3
+	-- CMD.LONG_MSG| ...
+	-- CMD.LONG_MSG|n of n|msg part n (rest)
+	if msg and #msg > 512 then
+		-- Important: send along the original command!
+		msg = string.char(command) .. msg
+
+		local numMessages = math.ceil( #msg/512 )
+		for i = 1, numMessages do
+			local subMsg = string.char(CMD.LONG_MSG) .. i .. " of " .. numMessages .. "|" .. msg:sub( (i-1)*512 + 1, i*512 )
+			user.connection:send( subMsg .. "\n" )
+		end
+	end
 
 	-- Send to only one user:
 	if user then
