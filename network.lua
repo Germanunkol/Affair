@@ -31,6 +31,7 @@ function network:startClient( address, playername, port )
 	print( "Connecting to:", address )
 
 	client = Client:new( address, port or PORT, playername )
+	assert(client, "Could not connect." )
 	return client
 end
 

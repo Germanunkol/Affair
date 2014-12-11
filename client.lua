@@ -19,13 +19,16 @@ function Client:new( address, port, playerName )
 	setmetatable( o, self )
 
 	print("Initialising Client...")
-	ok, o.conn = pcall(socket.connect, address, port)
+	o.conn = socket.tcp()
+	o.conn:settimeout(1)
+	local ok, msg = o.conn:connect( address, port )
+	--ok, o.conn = pcall(o.conn.connect, o.conn, address, port)
 	if ok and o.conn then
 		o.conn:settimeout(0)
 		print("Client connected", o.conn)
 	else
 		o.conn = nil
-		error("Could not connect.")
+		return nil
 	end
 
 	o.callbacks = {
@@ -52,6 +55,9 @@ end
 function Client:update( dt )
 	if self.conn then
 		local data, msg, partOfLine = self.conn:receive()
+		if msg ~= "timeout" then
+			print("\n(", data, msg, partOfLine, ")\n")
+		end
 		if data then
 			if #partMessage > 0 then
 				data = partMessage .. data
@@ -68,6 +74,7 @@ function Client:update( dt )
 				if #partOfLine > 0 then
 					partMessage = partMessage .. partOfLine
 				end
+				print("\n(", data, msg, partOfLine, #partOfLine, ")\n")
 			elseif msg == "closed" then
 				--self.conn:shutdown()
 				print("Disconnected.")
@@ -122,6 +129,8 @@ function Client:received( command, msg )
 			self.callbacks.connected()
 		end
 		print( "new playername",  msg )
+		--self.conn:settimeout(5)
+		--print("changed timeout.")
 	elseif command == CMD.USER_VALUE then
 		local id, keyType, key, valueType, value = string.match( msg, "(.*)|(.*)|(.*)|(.*)|(.*)" )
 
