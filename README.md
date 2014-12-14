@@ -43,6 +43,7 @@ It is used internally by the engine.
 Note: At this point, the new client knows about all other clients, so it's okay to send client-specific data - like the player entities - which might require knowledge about the other players.
 Note: At this point, the new client also knows the current status of all of the other users' customData (userValues) which have previously been set.
 Note: If you use server:send(...) in this function to send values to the new user, make sure to give the third parameter to the function (the "user" value). Otherwise, server:send broadcasts this info to all synchronized clients - and the others usually already have the data.
+Note: Do not user server:setUserCallback here (it will throw an error), because the user must be fully synchronized before setUserValue works. If you need to set custom user data, use server:setUserCallback in the userFullyConnected
 
 **server.callbacks.authorize( user )**: Called when a new user is trying to connect. Use this event to let the engine know whether or not a new user may connect at the moment. This event should return either true or false followed by an error message. If this event is not specified, it 
 Example usage: The authorize event could return _true_ while the server is in a lobby, but as soon as the actual game is started, it returns: _false_, "Game already started!". The client will then be disconnected and userFullyConnected and synchronize (above) will never be called for this client.

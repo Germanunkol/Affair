@@ -15,9 +15,11 @@ local numberOfUsers = 0
 local partMessage = ""
 local piecesOfLargeMessage = {}
 
-function Client:new( address, port, playerName )
+function Client:new( address, port, playerName, authMsg )
 	local o = {}
 	setmetatable( o, self )
+
+	authMsg = authMsg or ""
 
 	print("[NET] Initialising Client...")
 	o.conn = socket.tcp()
@@ -26,6 +28,7 @@ function Client:new( address, port, playerName )
 	--ok, o.conn = pcall(o.conn.connect, o.conn, address, port)
 	if ok and o.conn then
 		o.conn:settimeout(0)
+		self.send( o, CMD.AUTHORIZATION_REQUREST, authMsg )
 		print("[NET] -> Client connected", o.conn)
 	else
 		o.conn = nil
@@ -49,12 +52,18 @@ function Client:new( address, port, playerName )
 
 	numberOfUsers = 0
 
+	-- Filled if user is kicked:
+	o.kickMsg = ""
+
 	return o
 end
 
 function Client:update( dt )
 	if self.conn then
 		local data, msg, partOfLine = self.conn:receive()
+		if msg ~= "timeout" then
+			print(data, msg, partofLine)
+		end
 		if data then
 			if #partMessage > 0 then
 				data = partMessage .. data
@@ -75,7 +84,7 @@ function Client:update( dt )
 				--self.conn:shutdown()
 				print("[NET] Disconnected.")
 				if self.callbacks.disconnected then
-					self.callbacks.disconnected()
+					self.callbacks.disconnected( self.kickMsg )
 				end
 				self.conn = nil
 				return false
@@ -127,7 +136,6 @@ function Client:received( command, msg )
 			self.callbacks.connected()
 		end
 		--self.conn:settimeout(5)
-		--print("changed timeout.")
 	elseif command == CMD.USER_VALUE then
 		local id, keyType, key, valueType, value = string.match( msg, "(.*)|(.*)|(.*)|(.*)|(.*)" )
 
@@ -141,6 +149,10 @@ function Client:received( command, msg )
 		if self.callbacks.customDataChanged then
 			self.callback.customDataChanged( user, value, key )
 		end
+	elseif command == CMD.KICKED then
+
+		self.kickMsg = msg
+		print("[NET] Kicked from server: " .. msg )
 
 	elseif self.callbacks.received then
 		self.callbacks.received( command, msg )

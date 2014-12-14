@@ -11,10 +11,13 @@ Server.__index = Server
 local userList = {}
 local numberOfUsers = 0
 local userListByName = {}
+local authorizationTimeout = {}
 
 local partMessage = ""
 
 local MAX_PLAYERS = 16
+
+local AUTHORIZATION_TIMEOUT = 2
 
 function Server:new( maxNumberOfPlayers, port )
 	local o = {}
@@ -100,6 +103,16 @@ function Server:update( dt )
 					print("[NET] Err Received:", msg, data)
 				end
 			end
+
+			-- Fallback for backwards compability with clients which don't send an authorization
+			-- request:
+			if not user.authorized then
+				user.authorizationTimeout = user.authorizationTimeout - dt
+				-- Force authorization test now, with empty auth message:
+				if user.authorizationTimeout < 0 then
+					self:authorize( user, "" )
+				end
+			end
 		end
 
 		return true
@@ -110,6 +123,12 @@ end
 
 function Server:received( command, msg, user )
 	if command == CMD.PLAYERNAME then
+		
+		local name, authRequest = msg:match("(.-)|(.*)")
+		if not name or not authRequest then
+			name = msg
+		end
+
 		-- Check if there is another user with this name.
 		-- If so, increase the number at the end of the name...
 		while userListByName[ msg ] do
@@ -140,6 +159,11 @@ function Server:received( command, msg, user )
 
 		self:synchronizeUser( user )
 
+	elseif command == CMD.AUTHORIZATION_REQUREST then
+		print(user, msg )
+		if not user.authorized then
+			self:authorize( user, msg )
+		end
 	elseif command == CMD.USER_VALUE then
 		local keyType, key, valueType, value = string.match( msg, "(.*)|(.*)|(.*)|(.*)" )
 		key = stringToType( key, keyType )
@@ -217,16 +241,23 @@ end
 
 function Server:newUser( user )
 	print("[NET] New Client! Number of Clients: " .. numberOfUsers )
+	-- Wait for AUTHORIZATION_TIMEOUT seconds before forcing authorization process:
+	user.authorizationTimeout = AUTHORIZATION_TIMEOUT
+end
 
+function Server:authorize( user, authMsg )
 	local authorized = true
 	local reason = ""
-	if self.callbacks.authorize then
-		authorized, reason = self.callbacks.authorize( user )
-	end
 
 	if numberOfUsers > MAX_PLAYERS then
 		authorized = false
 		reason = "Server full!"
+	end
+
+	if authorized then
+		if self.callbacks.authorize then
+			authorized, reason = self.callbacks.authorize( user, authMsg )
+		end
 	end
 
 	if authorized then
@@ -254,7 +285,7 @@ end
 
 -- Find an empty slot in the user list:
 function findFreeID()
-	for k = 1, numberOfUsers + 1 do
+	for k = 1, numberOfUsers + 100 do
 		if not userList[k] then
 			return k
 		end
@@ -268,6 +299,11 @@ function Server:getNumUsers()
 	return numberOfUsers
 end
 
+function Server:kickUser( user, msg )
+	self:send( CMD.KICKED, msg, user )
+	user.connection:shutdown()
+end
+
 function Server:close()
 	if self.conn then
 		for k, u in pairs( userList ) do
@@ -279,6 +315,8 @@ function Server:close()
 end
 
 function Server:setUserValue( user, key, value )
+
+	assert( user.synchronized, "Do not use server:setUserValue() before synchronization is done." )
 
 	user.customData[key] = value
 

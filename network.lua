@@ -21,16 +21,16 @@ function network:startServer( maxNumberOfPlayers, port )
 	return server
 end
 
-function network:startClient( address, playername, port )
+function network:startClient( address, playername, port, authMsg )
 
 	if not address or #address == 0 then
 		print("[NET] No address found. Using default: 'localhost'")
 		address = "localhost"
 	end
 
-	print( "[NET] Connecting to:", address )
+	print( "[NET] Connecting to:", address, authMsg)
 
-	client = Client:new( address, port or PORT, playername )
+	client = Client:new( address, port or PORT, playername, authMsg )
 	assert(client, "Could not connect." )
 	return client
 end
