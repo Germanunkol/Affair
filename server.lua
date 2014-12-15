@@ -19,7 +19,7 @@ local MAX_PLAYERS = 16
 
 local AUTHORIZATION_TIMEOUT = 2
 
-local PINGTIME = 2
+local PINGTIME = 5
 local SYNCH_PINGS = true
 
 function Server:new( maxNumberOfPlayers, port, pingTime )
