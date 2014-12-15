@@ -15,7 +15,7 @@ local chatLines = { "", "", "", "", "", "", "" }
 local server = nil
 local client = nil
 
-local port = 3410
+local port = 3411
 
 function love.load( args )
 

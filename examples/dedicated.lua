@@ -7,7 +7,7 @@
 network = require( "../network" )
 local server
 local MAX_PLAYERS = 16
-local PORT = 3410
+local PORT = 3411
 
 -- COMMANDs are used to identify messages.
 -- Custom commands MUST be numbers between (including) 128 and 255.
