@@ -61,9 +61,6 @@ end
 function Client:update( dt )
 	if self.conn then
 		local data, msg, partOfLine = self.conn:receive()
-		if msg ~= "timeout" then
-			print(data, msg, partofLine)
-		end
 		if data then
 			if #partMessage > 0 then
 				data = partMessage .. data
@@ -99,7 +96,16 @@ function Client:update( dt )
 end
 
 function Client:received( command, msg )
-	if command == CMD.NEW_PLAYER then
+	if command == CMD.PING then
+		-- Respond to ping:
+		self:send( CMD.PONG, "" )
+	elseif command == CMD.USER_PINGTIME then
+		local id, ping = msg:match("(.-)|(.*)")
+		id = tonumber(id)
+		if userList[id] then
+			userList[id].ping.pingReturnTime = tonumber(ping)
+		end
+	elseif command == CMD.NEW_PLAYER then
 		local id, playerName = string.match( msg, "(.*)|(.*)" )
 		id = tonumber(id)
 		local user = User:new( nil, playerName, id )
@@ -205,6 +211,12 @@ function Client:getUserValue( key )
 		return u.customData[key]
 	end
 	return nil
+end
+
+function Client:getUserPing( id )
+	if users[id] then
+		return users[id].ping.pingReturnTime
+	end
 end
 
 return Client

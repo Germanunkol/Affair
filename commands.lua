@@ -1,5 +1,10 @@
 
-local COMMANDS =
+-- List of all possible internal commands.
+-- EVERY message is lead by a command byte from to following list.
+-- If it's not on this list then it's considered a user command and will be
+-- send to the client:receive and server:receive callbacks.
+-- CAREFUL: DON'T USE THE VALUE 10! It's the line feed which means end of message.
+local CMD =
 {
 	-- Connection process:
 	PLAYERNAME = 1,
@@ -14,6 +19,10 @@ local COMMANDS =
 	KICKED = 7,
 
 	AUTHORIZATION_REQUREST = 8,
+
+	PING = 9,	-- skip 10!
+	PONG = 11,
+	USER_PINGTIME = 12,
 }
 
-return COMMANDS
+return CMD

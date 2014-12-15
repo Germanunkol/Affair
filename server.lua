@@ -19,7 +19,10 @@ local MAX_PLAYERS = 16
 
 local AUTHORIZATION_TIMEOUT = 2
 
-function Server:new( maxNumberOfPlayers, port )
+local PINGTIME = 2
+local SYNCH_PINGS = true
+
+function Server:new( maxNumberOfPlayers, port, pingTime )
 	local o = {}
 	setmetatable( o, self )
 
@@ -40,6 +43,7 @@ function Server:new( maxNumberOfPlayers, port )
 	userListByName = {}
 	numberOfUsers = 0
 	partMessage = ""
+	PINGTIME = pingTime or 2
 
 	MAX_PLAYERS = maxNumberOfPlayers or 16
 
@@ -73,6 +77,7 @@ function Server:update( dt )
 					data = partMessage .. data
 					partMessage = ""
 				end
+
 
 				-- First letter stands for the command:
 				command, content = string.match(data, "(.)(.*)")
@@ -113,6 +118,24 @@ function Server:update( dt )
 					self:authorize( user, "" )
 				end
 			end
+
+			-- Every PINGTIME seconds, ping the user and wait for a pong.
+			-- Check if we already pinged and if not, send a ping:
+			if not user.ping.waitingForPong then
+				if user.ping.timer > PINGTIME then
+					self:send( CMD.PING, "" )
+					user.ping.timer = 0
+					user.ping.waitingForPong = true
+
+				end
+			else	-- Otherwise, wait for pong. If it doesn't come, kick user.
+				if user.ping.timer > 3*PINGTIME then
+					self:kickUser( user, "Timeout. Didn't respond to ping." )
+				end
+			end
+			user.ping.timer = user.ping.timer + dt
+
+
 		end
 
 		return true
@@ -122,7 +145,18 @@ function Server:update( dt )
 end
 
 function Server:received( command, msg, user )
-	if command == CMD.PLAYERNAME then
+	if command == CMD.PONG then
+		if user.ping.waitingForPong then
+			user.ping.pingReturnTime = math.floor(1000*user.ping.timer+0.5)
+			user.ping.timer = 0
+			user.ping.waitingForPong = false
+			-- let all users know about this user's pingtime:
+			if SYNCH_PINGS then
+				self:send( CMD.USER_PINGTIME, user.id .. "|" .. user.ping.pingReturnTime )
+				print("synch", user.ping.pingReturnTime )
+			end
+		end
+	elseif command == CMD.PLAYERNAME then
 		
 		local name, authRequest = msg:match("(.-)|(.*)")
 		if not name or not authRequest then
@@ -160,7 +194,6 @@ function Server:received( command, msg, user )
 		self:synchronizeUser( user )
 
 	elseif command == CMD.AUTHORIZATION_REQUREST then
-		print(user, msg )
 		if not user.authorized then
 			self:authorize( user, msg )
 		end
