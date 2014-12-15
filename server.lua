@@ -153,7 +153,6 @@ function Server:received( command, msg, user )
 			-- let all users know about this user's pingtime:
 			if SYNCH_PINGS then
 				self:send( CMD.USER_PINGTIME, user.id .. "|" .. user.ping.pingReturnTime )
-				print("synch", user.ping.pingReturnTime )
 			end
 		end
 	elseif command == CMD.PLAYERNAME then

@@ -31,7 +31,6 @@ function love.load( args )
 		server = network:startServer( 16, port )
 		-- Connect to the server.
 		client = network:startClient( 'localhost', "Germanunkol", port )
-
 		-- set server callbacks:
 		server.callbacks.received = serverReceived
 
