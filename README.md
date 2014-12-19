@@ -37,9 +37,9 @@ A server is started using the **network:startServer** function:
 ```
 server, err = network:startServer( numberOfPlayers, port, pingUpdate )
 ```
-**numberOfPlayers** is the maximum number of clients that may connect to the server (default 16).
-**port** is the port number (Servers will need to port-forward this port if they're behind a router. Use a value between 1025 and 65535, default is 3410)
-**pingUpdate** specifies how often the server should ping clients. (To check for timeouts, for example. Value in seconds, default is 5 seconds.)
+- **numberOfPlayers** is the maximum number of clients that may connect to the server (default 16).
+- **port** is the port number (Servers will need to port-forward this port if they're behind a router. Use a value between 1025 and 65535, default is 3410)
+- **pingUpdate** specifies how often the server should ping clients. (To check for timeouts, for example. Value in seconds, default is 5 seconds.)
 Upon success, this function returns a server object which can be used to control the server (send stuff, kick clients, close connections, get list of clients, get number of clients etc.)
 If the function fails, it returns nil and an err will be filled with the error message.
 
@@ -87,11 +87,10 @@ A client is started (and connected to an already running server) by calling **ne
 ```
 client, err = network:startClient( address, playername, port, authMsg )
 ```
-**address**: The IP v4 Address to connect to (example: "192.168.0.10", default: "localhost").
-**playername**: The player name to use as the client. This _may_ be changed by the server if a player
-with the same name already exists.
-**port**: The port the server is running on. Make sure this is the same as the server's port setting! (default: 3410)
-**authMsg**: The authorization message which the server will use to check if the client may connect. This can be a version string or a password (or both, just concatenate them). The message will be sent to the server where the server.callbacks.authorize function will be called (if set). The server can then use the authMsg string to determine whether this client will be allowed to connect or not.
+- **address**: The IP v4 Address to connect to (example: "192.168.0.10", default: "localhost").
+- **playername**: The player name to use as the client. This _may_ be changed by the server if a player with the same name already exists.
+- **port**: The port the server is running on. Make sure this is the same as the server's port setting! (default: 3410)
+- **authMsg**: The authorization message which the server will use to check if the client may connect. This can be a version string or a password (or both, just concatenate them). The message will be sent to the server where the server.callbacks.authorize function will be called (if set). The server can then use the authMsg string to determine whether this client will be allowed to connect or not.
 The call returns a client object if successful (which can be used to send data, set user values, and disconnect the client again) or nil followed by an error message.
 
 ### Callbacks: ###
