@@ -10,26 +10,25 @@ Features:
 - Automatically synched user values - want to synch the colour of your player with other servers, and let newly joining clients also know about it? Simply call client:setUserValue( "red", 255 ) and let the library handle synchronization.
 - TCP (reliable connection) only.
 
-## Stuff: ##
+## Example: ##
 
 The lib comes with an example (main.lua).
-Run a server using (this will also create a client and connect to itself):
+Run a server using:
 ```bash
-love .
+love . --server
 ```
 Connect a user by calling:
-
 ```bash
-love . client ADDRESS
+love . --client ADDRESS
 ```
 ADDRESS is the IP address. Defaults to 'localhost'.
 
-To demonstrate sending and receiving of data, a chat is implemented in the example. Press enter to type text.
-
 Default port is 3410.
 
-Never send the newline character "\n"!
-It is used internally by the engine.
+You can also create a server _and_ connect a client to it at the same time:
+```bash
+love . --server --client localhost
+```
 
 ## Server: ##
 
@@ -119,4 +118,7 @@ end
 Note: This is not called on the client who is joining (i.e. the one who has just been synchronized).
 Note: You do not need to keep a list of all users. Use client:getUsers() to get an up-to-date list of all currently connected users.
 
+## Remarks: ##
 
+Never send the newline character "\n"!
+It is used internally by the engine.
