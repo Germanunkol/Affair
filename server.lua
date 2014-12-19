@@ -43,7 +43,7 @@ function Server:new( maxNumberOfPlayers, port, pingTime )
 	userListByName = {}
 	numberOfUsers = 0
 	partMessage = ""
-	PINGTIME = pingTime or 2
+	PINGTIME = pingTime or 5
 
 	MAX_PLAYERS = maxNumberOfPlayers or 16
 
@@ -134,8 +134,6 @@ function Server:update( dt )
 				end
 			end
 			user.ping.timer = user.ping.timer + dt
-
-
 		end
 
 		return true

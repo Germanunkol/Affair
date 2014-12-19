@@ -17,8 +17,17 @@ local server = nil
 local client = nil
 
 function network:startServer( maxNumberOfPlayers, port, pingTime )
-	server = Server:new( maxNumberOfPlayers, port or PORT, pingTime )
-	return server
+	local createServer = function()
+			return Server:new( maxNumberOfPlayers, port or PORT, pingTime )
+	end
+
+	success, server = pcall( createServer )
+	local err = ""
+	if not success then
+		err = server
+		server = nil
+	end
+	return server, err
 end
 
 function network:startClient( address, playername, port, authMsg )
@@ -30,9 +39,18 @@ function network:startClient( address, playername, port, authMsg )
 
 	print( "[NET] Connecting to:", address, authMsg)
 
-	client = Client:new( address, port or PORT, playername, authMsg )
+	local createClient = function()
+		return Client:new( address, port or PORT, playername, authMsg )
+	end
+
+	success, client = pcall( createClient )
+	local err = ""
+	if not success then
+		err = client
+		client = nil
+	end
 	assert(client, "Could not connect." )
-	return client
+	return client, err
 end
 
 function network:closeConnection()
