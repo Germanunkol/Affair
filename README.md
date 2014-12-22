@@ -1,4 +1,4 @@
-# LoveNetworkSkeleton #
+# Affair - Löve Networking Library #
 
 A basic skeleton aimed at the awesome Löve engine (love2d.org).
 

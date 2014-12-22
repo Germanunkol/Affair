@@ -15,7 +15,7 @@ local server = nil
 local client = nil
 
 local NUMBER_OF_PLAYERS = 16	-- Server should not allow more than 16 connections
-local PORT = 3411				-- The port which might need to be forwarded
+local PORT = 3410				-- The port which might need to be forwarded
 local PING_UPDATE_TIME = 5		-- Server pings clients every 5 seconds
 local ADDRESS = "localhost"		-- Fallback address to connect client to
 
