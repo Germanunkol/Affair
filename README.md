@@ -30,6 +30,13 @@ You can also create a server _and_ connect a client to it at the same time:
 love . --server --client localhost
 ```
 
+Another included example is the dedicated server, which runs in plain Lua (Lua socket must be installed. If you have Löve installed, then this is usually the case.)
+Run:
+```bash
+love examples/dedicated.lua
+```
+Then connect a client to it by running the client example above.
+
 ## Server: ##
 
 A server is started using the **network:startServer** function:
