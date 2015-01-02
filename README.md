@@ -1,14 +1,18 @@
 # Affair - Löve Networking Library #
 
-A basic skeleton aimed at the awesome Löve engine (love2d.org).
+A networking library aimed at the awesome Löve engine (love2d.org).
+This library aims to take care of the enourmous overhead of connecting, authorizing, passwords, synchronizing game states, usernames, userlist etc. involved when creating a network game.
+The goal is to make the networking very simple.
 
 Features:
-- Synchronizing of Userlist (including IDs and Usernames) is done by library.
+- Synchronizing of userlist (including IDs and Playernames) is done by library.
 - Callbacks for important events (new user, disconnected etc.) can be defined.
-- Server is independent of and can be run as a dedicated, headless, plain-Lua server (example included). Make sure Luasocket is installed if you use the server without Löve.
+- Server is independent of and can be run as a dedicated, headless, plain-Lua server (example included).
 - Automatic handling of usernames. If a name appears multiple times, the library automatically appends numbers and increments them.
 - Automatically synched user values - want to synch the colour of your player with other servers, and let newly joining clients also know about it? Simply call client:setUserValue( "red", 255 ) and let the library handle synchronization.
 - TCP (reliable connection) only.
+- [WIP] Online serverlist - see [Germanunkol/AffairMainServer](https://github.com/Germanunkol/AffairMainServer)
+- [TODO] LAN serverlist (UDP-Broadcast)
 
 ## Example: ##
 
@@ -30,7 +34,7 @@ You can also create a server _and_ connect a client to it at the same time:
 love . --server --client localhost
 ```
 
-Another included example is the dedicated server, which runs in plain Lua (Lua socket must be installed. If you have Löve installed, then this is usually the case.)
+Another included example is the dedicated server, which runs in plain Lua (Luasocket must be installed. If you have Löve installed, then this is usually the case.)
 Run:
 ```bash
 lua examples/dedicated.lua
@@ -126,5 +130,17 @@ Note: You do not need to keep a list of all users. Use client:getUsers() to get 
 
 ## Remarks: ##
 
-Never send the newline character "\n"!
-It is used internally by the engine.
+**Never** send the newline character "\n"! It is used internally by the engine.
+
+If you want to send multiple lines in one message, consider replacing all "\n" characters by a character which you're sure is not in the message, say, \t (the tabulator character):
+
+```lua
+string.gsub( str, "\n", "\t" )	-- replace all \n by \t
+```
+
+On the other side, put it back together by using:
+```lua
+string.gsub( str, "\t", "\n" )	-- replace all \t by \n
+```
+
+
