@@ -19,6 +19,8 @@ local PORT = 3410				-- The port which might need to be forwarded
 local PING_UPDATE_TIME = 5		-- Server pings clients every 5 seconds
 local ADDRESS = "localhost"		-- Fallback address to connect client to
 
+local MAIN_SERVER_ADDRESS = "http://germanunkol.de/test/Affair/advertise.php"
+
 function love.load( args )
 
 	local startingClient = false
@@ -67,6 +69,7 @@ function startServer()
 
 	if server then
 		setServerCallbacks()
+		server:advertise( "Test Server", MAIN_SERVER_ADDRESS )
 	else
 		print("Error starting server:", err)
 		love.event.quit()
@@ -91,5 +94,4 @@ end
 function setClientCallbacks()
 
 end
-
 

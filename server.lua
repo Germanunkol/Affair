@@ -5,6 +5,8 @@ local socket = require("socket")
 local User = require( BASE .. "user" )
 local CMD = require( BASE .. "commands" )
 
+local ADVERTISEMENT_UPDATE_TIME = 60
+
 local Server = {}
 Server.__index = Server
 
@@ -48,6 +50,9 @@ function Server:new( maxNumberOfPlayers, port, pingTime )
 	PINGTIME = pingTime or 5
 
 	MAX_PLAYERS = maxNumberOfPlayers or 16
+
+	o.port = port
+	o.advertisement = {}
 
 	return o
 end
@@ -136,6 +141,13 @@ function Server:update( dt )
 				end
 			end
 			user.ping.timer = user.ping.timer + dt
+		end
+
+		if self.advertisement.active then
+			self.advertisement.timer = self.advertisement.timer - dt
+			if self.advertisement.timer < 0 then
+				self:advertiseNow()
+			end
 		end
 
 		return true
@@ -357,6 +369,32 @@ function Server:setUserValue( user, key, value )
 	local valueType = type( value )
 	self:send( CMD.USER_VALUE, user.id .. "|" ..  keyType .. "|" .. tostring(key) ..
 			"|" .. valueType .. "|" .. tostring(value) )
+end
+
+function Server:advertise( data, url )
+	assert( url or self.advertisement.url,
+		"The first time you call Server:advertise, a URL must be given!" )
+
+	self.advertisement.data = data
+	self.advertisement.active = true
+	self.advertisement.timer = ADVERTISEMENT_UPDATE_TIME
+	if url then
+		self.advertisement.url = url
+		self:advertiseNow()
+	end
+end
+
+function Server:unAdvertise()
+	self.advertisement.active = false
+end
+
+-- Called internally when server advertisement timer has run out.
+-- Starts the advertisement (or "keepalive") process:
+function Server:advertiseNow()
+	os.execute( "lua serverlist/advertise.lua "
+			.. self.advertisement.url .. " "
+			.. self.port .. " &" )
+	self.advertisement.timer = ADVERTISEMENT_UPDATE_TIME
 end
 
 return Server

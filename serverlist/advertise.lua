@@ -6,14 +6,17 @@ local http = require("socket.http")
 
 print( "[ADVERTISE] Attempting to connect" )
 
+local URL = arg[1] or ""
 local PORT = arg[2] or ""
 local INFO = arg[3] or ""
+
+print( "[ADVERTISE] Contacting: " .. URL )
 
 local body = ""
 body = body .. "port=" .. PORT.. "&"
 body = body .. "info=" .. INFO .. "&"
 
-print( http.request( arg[1], body ) )
+print( http.request( URL, body ) )
 
 -- Close this process:
 os.exit()
