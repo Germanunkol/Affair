@@ -9,6 +9,8 @@ local server
 local MAX_PLAYERS = 16
 local PORT = 3410
 
+local MAIN_SERVER_ADDRESS = "http://germanunkol.de/test/Affair/advertise.php"
+
 -- COMMANDs are used to identify messages.
 -- Custom commands MUST be numbers between (including) 128 and 255.
 -- Make sure these are the same on client and server.
@@ -28,8 +30,9 @@ function startDedicatedServer()
 	end)
 
 	if success then
-		-- set client callbacks:
+		-- set callbacks for the newly created server:
 		setServerCallbacks( server )
+		server:advertise( "Dedicated Server", MAIN_SERVER_ADDRESS )
 	else
 		-- If I can't start a server for some reason, let user know and exit:
 		print(server)
