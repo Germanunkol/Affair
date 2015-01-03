@@ -354,6 +354,9 @@ function Server:close()
 			u.connection:shutdown()
 		end
 		self.conn:close()
+		if self.advertisement.active then
+			self:unAdvertise()
+		end
 	end
 	self.conn = nil
 end
@@ -375,25 +378,36 @@ function Server:advertise( data, url )
 	assert( url or self.advertisement.url,
 		"The first time you call Server:advertise, a URL must be given!" )
 
+	assert( data, "server:advertise called without any information." )
+	assert( not data:find("%s"),
+		"Data passed to server:advertise must not contain whitespace. Remove all space and tab characters!" )
+
 	self.advertisement.data = data
 	self.advertisement.active = true
 	self.advertisement.timer = ADVERTISEMENT_UPDATE_TIME
 	if url then
-		self.advertisement.url = url
+		-- Remove a possible trailing slash from the URL:
+		self.advertisement.url = url:match( "(.*)/?$" )
 		self:advertiseNow()
 	end
 end
 
 function Server:unAdvertise()
 	self.advertisement.active = false
+	-- Connect to the unAdvertise script on the main server. By calling it, the server will know
+	-- that this server should be removed from the serverlist.
+	os.execute( "lua serverlist/unAdvertise.lua "
+			.. self.advertisement.url .. "/unAdvertise.php "
+			.. self.port )
 end
 
 -- Called internally when server advertisement timer has run out.
 -- Starts the advertisement (or "keepalive") process:
 function Server:advertiseNow()
 	os.execute( "lua serverlist/advertise.lua "
-			.. self.advertisement.url .. " "
-			.. self.port .. " &" )
+			.. self.advertisement.url .. "/advertise.php "
+			.. self.port .. " "
+			.. self.advertisement.data .. " &" )
 	self.advertisement.timer = ADVERTISEMENT_UPDATE_TIME
 end
 
