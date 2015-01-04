@@ -4,6 +4,16 @@ local Server = require( BASE .. "server" )
 local Client = require( BASE .. "client" )
 
 local network = {}
+-- A list containing the servers as retreived from the web server:
+network.serverlistRemote = {
+	thread = nil,
+	entries = {},
+}
+-- A list containing servers in the local area network:
+network.serverlistLocal = {
+	thread = nil,
+	entries = {},
+}
 
 local conn = nil
 local connectionType = ""
@@ -78,6 +88,46 @@ function network:update( dt )
 			client = nil
 		end
 	end
+	if self.serverlistRemote.thread then
+		local err = self.serverlistRemote.thread:getError()
+		if err then
+			print("THREAD ERROR: " .. err)
+			self.serverlistRemote.thread = nil
+		end
+		local msg = self.serverlistRemote.cout:pop()
+		if msg then
+			if msg == "End" then
+				self.serverlistLocal.thread = nil
+			else
+				local address, port, info = msg:match("(.*):(%S*)%s(.*)")
+				print("Server found at:\n" ..
+					"\tAddress: " .. address .. "\n" ..
+					"\tPort: " .. port .. "\n" ..
+					"\tInfo: " .. info)
+			end
+
+		end
+	end
+	if self.serverlistLocal.thread then
+		local err = self.serverlistLocal.thread:getError()
+		if err then
+			print("THREAD ERROR: " .. err)
+			self.serverlistLocal.thread = nil
+		end
+		local msg = self.serverlistLocal.cout:pop()
+		if msg then
+			if msg == "End" then
+				self.serverlistLocal.thread = nil
+			else
+				local address, port, info = msg:match("(.*):(%S*)%s(.*)")
+				print("Server found at:\n",
+					"\tAddress: " .. address .. "\n" ..
+					"\tPort: " .. port .. "\n" ..
+					"\tInfo: " .. info)
+			end
+
+		end
+	end
 end
 
 function network:getUsers()
@@ -103,6 +153,38 @@ function stringToType( value, goalType )
 	end
 	-- if it was meant to be a string, return it as such:
 	return value
+end
+
+function network:requestServerList( id, url )
+
+	assert( self.serverlistRemote.id or id, "When calling requestServerList for the first time, a game-ID (Name of your game) must be given" )
+
+	assert( self.serverlistRemote.url or url, "When calling requestServerList for the first time, a URL must be given" )
+	
+	if self.serverlistRemote.thread then
+		self.serverlistRemote.thread = nil
+	end
+	if id then
+		self.serverlistRemote.id = id
+	end
+	if url then
+		url = url:match("(.*)/*")
+		self.serverlistRemote.url = url .. "/getList.php"
+		print("getting from url:", self.serverlistRemote.url)
+	end
+	
+	local t = love.thread.newThread( BASE .. "serverlist/getList.lua" )
+	local cin = love.thread.newChannel()
+	local cout = love.thread.newChannel()
+
+	self.serverlistRemote.thread = t
+	self.serverlistRemote.cout = cout
+
+	t:start( cout, self.serverlistRemote.url, self.serverlistRemote.id )
+end
+
+function network:requestServerListLAN()
+	
 end
 
 return network

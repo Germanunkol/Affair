@@ -8,12 +8,14 @@ print( "[ADVERTISE] Attempting to connect" )
 
 local URL = arg[1] or ""
 local PORT = arg[2] or ""
-local INFO = arg[3] or ""
+local ID = arg[3] or ""
+local INFO = arg[4] or ""
 
 print( "[ADVERTISE] Contacting: " .. URL )
 
 local body = ""
 body = body .. "port=" .. PORT.. "&"
+body = body .. "id=" .. ID .. "&"
 body = body .. "info=" .. INFO .. "&"
 
 print( http.request( URL, body ) )

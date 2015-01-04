@@ -374,9 +374,11 @@ function Server:setUserValue( user, key, value )
 			"|" .. valueType .. "|" .. tostring(value) )
 end
 
-function Server:advertise( data, url )
+function Server:advertise( data, id, url )
 	assert( url or self.advertisement.url,
-		"The first time you call Server:advertise, a URL must be given!" )
+		"The first time you call Server:advertise, a URL must be given! (Third argument must not be empty)" )
+	assert( id or self.advertisement.id,
+		"The first time you call Server:advertise, a game-ID (i.e. name of your game) must be given! (Second argument must not be empty)" )
 
 	assert( data, "server:advertise called without any information." )
 	assert( not data:find("%s"),
@@ -385,11 +387,14 @@ function Server:advertise( data, url )
 	self.advertisement.data = data
 	self.advertisement.active = true
 	self.advertisement.timer = ADVERTISEMENT_UPDATE_TIME
+	if id then
+		self.advertisement.id = id
+	end
 	if url then
 		-- Remove a possible trailing slash from the URL:
 		self.advertisement.url = url:match( "(.*)/?$" )
-		self:advertiseNow()
 	end
+	self:advertiseNow()
 end
 
 function Server:unAdvertise()
@@ -407,6 +412,7 @@ function Server:advertiseNow()
 	os.execute( "lua serverlist/advertise.lua "
 			.. self.advertisement.url .. "/advertise.php "
 			.. self.port .. " "
+			.. self.advertisement.id .. " "
 			.. self.advertisement.data .. " &" )
 	self.advertisement.timer = ADVERTISEMENT_UPDATE_TIME
 end

@@ -24,6 +24,8 @@ local MAIN_SERVER_ADDRESS = "http://germanunkol.de/test/Affair"
 function love.load( args )
 
 	local startingClient = false
+	local startingServer = false
+	local serverlist = false
 	for k, v in ipairs( args ) do
 		if v == "--client" then
 			if args[k+1] then
@@ -34,6 +36,9 @@ function love.load( args )
 		if v == "--server" then
 			startingServer = true
 		end
+		if v == "--list" then
+			serverlist = true
+		end
 		if v == "--help" then
 			printHelp()
 			love.event.quit()
@@ -41,7 +46,7 @@ function love.load( args )
 		end
 	end
 
-	if not startingServer and not startingClient then
+	if not startingServer and not startingClient and not serverlist then
 		printHelp()
 		love.event.quit()
 		return
@@ -54,6 +59,9 @@ function love.load( args )
 		startClient()
 	end
 
+	if serverlist then
+		network:requestServerList( "ExampleServer", MAIN_SERVER_ADDRESS )
+	end
 end
 
 function love.quit()
@@ -80,7 +88,7 @@ function startServer()
 
 	if server then
 		setServerCallbacks()
-		server:advertise( "TestServer", MAIN_SERVER_ADDRESS )
+		server:advertise( "0Players", "ExampleServer", MAIN_SERVER_ADDRESS )
 	else
 		print("Error starting server:", err)
 		love.event.quit()
