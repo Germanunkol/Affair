@@ -32,7 +32,7 @@ function startDedicatedServer()
 	if success then
 		-- set callbacks for the newly created server:
 		setServerCallbacks( server )
-		server:advertise( "0Players(DedicatedServer)", "ExampleServer", MAIN_SERVER_ADDRESS )
+		server:advertise( "0Players|DedicatedServer", "ExampleServer", MAIN_SERVER_ADDRESS )
 	else
 		-- If I can't start a server for some reason, let user know and exit:
 		print(server)
