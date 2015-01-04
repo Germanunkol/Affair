@@ -80,14 +80,19 @@ function setServerCallbacks( server )
 	server.callbacks.synchronize = synchronize
 
 	-- Called when user has connected AND has been synchronized:
-	server.callbacks.userFullyConnected = connected
+	server.callbacks.userFullyConnected = updateAdvertisement
 
 	-- Called whenever one of the users sends data:
 	server.callbacks.received = received
 
 	-- Called whenever one of the users is disconnected
-	server.callbacks.disconnectedUser = disconnected
+	server.callbacks.disconnectedUser = updateAdvertisement
+end
 
+function updateAdvertisement()
+	local players = network:getUsers()
+	-- Only update the data field in the advertisement, leave the id and URL the same:
+	server:advertise( "Players:" .. #players )
 end
 
 -- Sleep time in second - use the socket library to make sure the 

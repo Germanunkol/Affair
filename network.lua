@@ -4,6 +4,12 @@ local Server = require( BASE .. "server" )
 local Client = require( BASE .. "client" )
 
 local network = {}
+network.callbacks = {
+	newServerEntryRemote = nil,
+	finishedServerlistRemote = nil,
+	newServerEntryLocal = nil,
+}
+
 -- A list containing the servers as retreived from the web server:
 network.serverlistRemote = {
 	thread = nil,
@@ -47,7 +53,7 @@ function network:startClient( address, playername, port, authMsg )
 		address = "localhost"
 	end
 
-	print( "[NET] Connecting to:", address, authMsg)
+	print( "[NET] Connecting to:", address, port, authMsg)
 
 	local createClient = function()
 		return Client:new( address, port or PORT, playername, authMsg )
@@ -88,44 +94,33 @@ function network:update( dt )
 			client = nil
 		end
 	end
+
+	-- Check for new incoming messages from the serverlist threads:
 	if self.serverlistRemote.thread then
+		-- Check for errors:
 		local err = self.serverlistRemote.thread:getError()
 		if err then
 			print("THREAD ERROR: " .. err)
 			self.serverlistRemote.thread = nil
 		end
+		-- Get any new messages:
 		local msg = self.serverlistRemote.cout:pop()
 		if msg then
-			if msg == "End" then
-				self.serverlistLocal.thread = nil
-			else
-				local address, port, info = msg:match("(.*):(%S*)%s(.*)")
-				print("Server found at:\n" ..
-					"\tAddress: " .. address .. "\n" ..
-					"\tPort: " .. port .. "\n" ..
-					"\tInfo: " .. info)
-			end
-
+			self:newServerListEntryRemote( msg )
 		end
 	end
 	if self.serverlistLocal.thread then
+		-- Check for errors:
 		local err = self.serverlistLocal.thread:getError()
 		if err then
 			print("THREAD ERROR: " .. err)
 			self.serverlistLocal.thread = nil
 		end
+
+		-- Get any new messages:
 		local msg = self.serverlistLocal.cout:pop()
 		if msg then
-			if msg == "End" then
-				self.serverlistLocal.thread = nil
-			else
-				local address, port, info = msg:match("(.*):(%S*)%s(.*)")
-				print("Server found at:\n",
-					"\tAddress: " .. address .. "\n" ..
-					"\tPort: " .. port .. "\n" ..
-					"\tInfo: " .. info)
-			end
-
+			self:newServerListEntryLocal( msg )
 		end
 	end
 end
@@ -168,9 +163,8 @@ function network:requestServerList( id, url )
 		self.serverlistRemote.id = id
 	end
 	if url then
-		url = url:match("(.*)/*")
+		url = url:match("(.-)/?$")
 		self.serverlistRemote.url = url .. "/getList.php"
-		print("getting from url:", self.serverlistRemote.url)
 	end
 	
 	local t = love.thread.newThread( BASE .. "serverlist/getList.lua" )
@@ -179,12 +173,67 @@ function network:requestServerList( id, url )
 
 	self.serverlistRemote.thread = t
 	self.serverlistRemote.cout = cout
+	self.serverlistRemote.entries = {}
 
 	t:start( cout, self.serverlistRemote.url, self.serverlistRemote.id )
 end
 
 function network:requestServerListLAN()
 	
+end
+
+function network:newServerListEntryRemote( msg )
+	if msg == "End" then
+		self.serverlistRemote.thread = nil
+		if self.callbacks.finishedServerlistRemote then
+			self.callbacks.finishedServerlistRemote( self.serverlistRemote.entries )
+		end
+	else
+		local address, port, info = msg:match("(.*):(%S*)%s(.*)")
+		if address and port and info then
+			print("Server found at:\n" ..
+				"\tAddress: " .. address .. "\n" ..
+				"\tPort: " .. port .. "\n" ..
+				"\tInfo: " .. info)
+
+			local e = {
+				address = address,
+				port = port,
+				info = info,
+			}
+			table.insert( self.serverlistRemote.entries, e )
+			if self.callbacks.newServerEntryRemote then
+				self.callbacks.newServerEntryRemote( e )
+			end
+		end
+	end
+end
+
+function network:getServerListRemote()
+	return self.serverlistRemote.entries
+end
+
+function network:newServerListEntryLocal( msg )
+	if msg == "End" then
+		self.serverlistLocal.thread = nil
+	else
+		local address, port, info = msg:match("(.*):(%S*)%s(.*)")
+		if address and port and info then
+			local e = {
+				address = address,
+				port = tonumber(port),
+				info = info,
+			}
+			table.insert( self.serverlistLocal.entries, e )
+			if self.callbacks.newServerEntryLocal then
+				self.callbacks.newServerEntryLocal( e )
+			end
+		end
+	end
+end
+
+function network:getServerListLocal()
+	return self.serverlistLocal.entries
 end
 
 return network

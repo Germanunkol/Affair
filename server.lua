@@ -392,7 +392,7 @@ function Server:advertise( data, id, url )
 	end
 	if url then
 		-- Remove a possible trailing slash from the URL:
-		self.advertisement.url = url:match( "(.*)/?$" )
+		self.advertisement.url = url:match( "(.-)/?$" )
 	end
 	self:advertiseNow()
 end

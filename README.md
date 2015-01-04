@@ -11,7 +11,7 @@ Features:
 - Automatic handling of usernames. If a name appears multiple times, the library automatically appends numbers and increments them.
 - Automatically synched user values - want to synch the colour of your player with other servers, and let newly joining clients also know about it? Simply call client:setUserValue( "red", 255 ) and let the library handle synchronization.
 - TCP (reliable connection) only.
-- [WIP] Online serverlist - see [Germanunkol/AffairMainServer](https://github.com/Germanunkol/AffairMainServer)
+- Online serverlist - see [Germanunkol/AffairMainServer](https://github.com/Germanunkol/AffairMainServer)
 - [TODO] LAN serverlist (UDP-Broadcast)
 
 ## Example: ##
@@ -143,4 +143,44 @@ On the other side, put it back together by using:
 string.gsub( str, "\t", "\n" )	-- replace all \t by \n
 ```
 
+## Server lists: ##
+### Online: ###
+For the online server list to work, you will need to install some sort of web-server (a simple Apache server will do, you need php support) and put the files from the [AffairMainServer](https://github.com/Germanunkol/AffairMainServer) into some folder on that main server (The only requirement is that the folder is visible to anyone).
+On your game's server, call the following function (after having created a server using network:startServer):
 
+**server:advertise( data, id, url )**
+
+- data: A string with any info about the server which you want the clients to get, before joining. This may contain a name, a password, the number of players, the map name etc.
+- id: A name which identifies the game
+- the URL to the **folder** where the scripts are on your main server. For example, if you have the advertise.php in a path like this: _~/web/public/AffairMainServer/advertise.php_, then the URL given here should be _~/web/public/AffairMainServer_.
+
+**Careful!** The data and id strings may not contain the following characters: " & $ | and any whitespace (space, tab, newline). Usually, you're best off by using a comma-seperated list.
+The function will start sending updates about your server every minute or so, to tell the web server that your server is still alive, and will stop sending updates when your server goes offline.
+You can change the server's data, by calling the function again with only the data parameter - for example when you want to change the map or the number of players.
+If you want to stop advertising the server, call (for example because a round has started and you want no more players to join):
+**server:unAdvertise()**
+
+**Example:**
+```lua
+function startServer()
+	-- Attempt to create a server:
+	server, err = network:startServer( NUMBER_OF_PLAYERS, PORT, PING_UPDATE_TIME )
+
+	if server then
+		-- These callbacks are called when a new user connects or a user disconnected:
+		server.callbacks.userFullyConnected = updateAdvertisement
+		server.callbacks.disconnectedUser = updateAdvertisement
+		-- Start advertising this server, so others can join:
+		server:advertise( "Players:0", "ExampleServer", MAIN_SERVER_ADDRESS )
+	else
+		print("Error starting server:", err)
+		love.event.quit()
+	end
+end
+
+-- Update number of players on the serverlist:
+function updateAdvertisement()
+	local players = network:getUsers()
+	-- Only update the data field in the advertisement, leave the id and URL the same:
+	server:advertise( "Players:" .. #players )
+end
