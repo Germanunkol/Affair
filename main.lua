@@ -112,19 +112,25 @@ function startClient()
 end
 
 function setServerCallbacks()
-	server.callbacks.userFullyConnected = updateAdvertisement
-	server.callbacks.disconnectedUser = updateAdvertisement
+	server.callbacks.userFullyConnected = connected
+	server.callbacks.disconnectedUser = disconnected
 end
 
 function setClientCallbacks()
 
 end
 
-function updateAdvertisement()
+function connected()
 	local players = network:getUsers()
 	-- Only update the data field in the advertisement, leave the id and URL the same:
 	server:advertise( "Players:" .. #players )
 end
+function disconnected()
+	local players = network:getUsers()
+	-- Only update the data field in the advertisement, leave the id and URL the same:
+	server:advertise( "Players:" .. #players - 1 )
+end
+
 
 function newServerEntryRemote( entry )
 	print("Server found at:\n" ..

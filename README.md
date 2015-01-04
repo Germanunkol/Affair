@@ -168,8 +168,8 @@ function startServer()
 
 	if server then
 		-- These callbacks are called when a new user connects or a user disconnected:
-		server.callbacks.userFullyConnected = updateAdvertisement
-		server.callbacks.disconnectedUser = updateAdvertisement
+		server.callbacks.userFullyConnected = connected
+		server.callbacks.disconnectedUser = disconnected
 		-- Start advertising this server, so others can join:
 		server:advertise( "Players:0", "ExampleServer", MAIN_SERVER_ADDRESS )
 	else
@@ -179,8 +179,17 @@ function startServer()
 end
 
 -- Update number of players on the serverlist:
-function updateAdvertisement()
+function connected()
 	local players = network:getUsers()
 	-- Only update the data field in the advertisement, leave the id and URL the same:
 	server:advertise( "Players:" .. #players )
 end
+function disconnected()
+	local players = network:getUsers()
+	-- Only update the data field in the advertisement, leave the id and URL the same:
+	server:advertise( "Players:" .. #players - 1 )
+end
+
+### LAN: ###
+
+LAN server lists are not done implemented yet.
