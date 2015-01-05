@@ -10,7 +10,7 @@ This library aims to take care of the enourmous overhead of connecting, authoriz
 - Server is independent of Löve and can be run as a dedicated, headless, plain-Lua server (example included).
 - Online serverlist
 - LAN serverlist (UDP-Broadcast)
-- Automatically synched user values. Simply call client:setUserValue( "red", 255 ) and let the library handle synchronization. All other clients will now have access to this user's "red" value, and it will be "255" on all clients - it will even be available on clients who join _after_ the setUserValue has been called. This way, any info about users (character, stats, position, upgrades etc.) are handled by the engine without you needing to worry about them.
+- Automatically synched user values. Simply call client:setUserValue( "red", 255 ) and let the library handle synchronization. All other clients will now have access to this user's "red" value, and it will be "255" on all clients - it will even be available on clients who join _after_ the setUserValue has been called. This way, any info about users (character, stats, position, upgrades, hitpoints etc.) are handled by the engine without you needing to worry about them.
 - Calculates and stores ping time of players.
 - Automatic handling of usernames. If a name appears multiple times, the library automatically appends numbers and increments them.
 
@@ -205,4 +205,14 @@ end
 
 ### LAN: ###
 
-LAN server lists are not done implemented yet.
+When calling the **server:advertise** function above, the server will also advertise itself in your Local Area Network.
+This uses a UDP port to accept messages from clients. The port can be set as the fourth argument in **network:startServer** (see above).
+
+On the client, you can start looking for LAN servers using:
+```lua
+network:requestServerListLAN( id, portUDP )
+```
+- **id** must be the same name as given to the server:advertise call on the server. The game filters out any servers which don't have the same ID, so make sure this is set correctly.
+- **portUDP** is an optional port you can set so that the UDP broadcast works on this port. **Important:** If you change this on the client, you must also change it on the server, when calling server:advertise!
+- 
+You may call this function again to refresh the LAN server list (i.e. send out a new request). In this case, you can call it without parameters - the previous ones will be used.
