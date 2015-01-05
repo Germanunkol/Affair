@@ -7,7 +7,7 @@
 network = require( "../network" )
 local server
 local MAX_PLAYERS = 16
-local PORT = 3410
+local PORT = 3412
 
 local MAIN_SERVER_ADDRESS = "http://germanunkol.de/test/Affair/advertise.php"
 
