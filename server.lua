@@ -26,7 +26,7 @@ local AUTHORIZATION_TIMEOUT = 2
 local PINGTIME = 5
 local SYNCH_PINGS = true
 
-function Server:new( maxNumberOfPlayers, port, pingTime )
+function Server:new( maxNumberOfPlayers, port, pingTime, portUDP )
 	local o = {}
 	setmetatable( o, self )
 
@@ -54,6 +54,7 @@ function Server:new( maxNumberOfPlayers, port, pingTime )
 	MAX_PLAYERS = maxNumberOfPlayers or 16
 
 	o.port = port
+	o.portUDP = portUDP
 	o.advertisement = {}
 
 	return o
@@ -413,10 +414,10 @@ function Server:advertise( data, id, url )
 	self:advertiseNow()
 
 	if firstAdvertisement then
-		advertiseLAN:setData( self.port, self.advertisement.id, self.advertisement.data )
+		advertiseLAN:setData( self.portUDP, self.port, self.advertisement.id, self.advertisement.data )
 		advertiseLAN:startListening()
 	else
-		advertiseLAN:setData( self.port, self.advertisement.id, self.advertisement.data )
+		advertiseLAN:setData( self.portUDP, self.port, self.advertisement.id, self.advertisement.data )
 	end
 end
 

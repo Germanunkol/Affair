@@ -16,7 +16,6 @@ local client = nil
 
 local NUMBER_OF_PLAYERS = 16	-- Server should not allow more than 16 connections
 local PORT = 3411				-- The port which might need to be forwarded
-local PING_UPDATE_TIME = 5		-- Server pings clients every 5 seconds
 local ADDRESS = "localhost"		-- Fallback address to connect client to
 
 local MAIN_SERVER_ADDRESS = "http://germanunkol.de/test/Affair/"
@@ -62,18 +61,25 @@ function love.load( args )
 	end
 
 	if serverlist then
-		-- Set callbacks for remote server list:
-		network.callbacks.newServerEntryRemote = newServerEntryRemote
-		network.callbacks.finishedServerlistRemote = finishedServerlistRemote
-
-		-- Set callback for LAN server list:
-		network.callbacks.newServerEntryLocal = newServerEntryLocal
-
-		-- Request server lists ("ExampleServer is the name of the game used on the server
-		-- for advertising):
-		network:requestServerList( "ExampleServer", MAIN_SERVER_ADDRESS )
-		network:requestServerListLAN( "ExampleServer", PORT )
+		requestServerLists()
 	end
+end
+
+function requestServerLists()
+	-- reset any already loaded lists:
+	buttons = {}
+
+	-- Set callbacks for remote server list:
+	network.callbacks.newServerEntryRemote = newServerEntryRemote
+	network.callbacks.finishedServerlistRemote = finishedServerlistRemote
+
+	-- Set callback for LAN server list:
+	network.callbacks.newServerEntryLocal = newServerEntryLocal
+
+	-- Request server lists ("ExampleServer is the name of the game used on the server
+	-- for advertising):
+	network:requestServerList( "ExampleServer", MAIN_SERVER_ADDRESS )
+	network:requestServerListLAN( "ExampleServer" )
 end
 
 function love.quit()
@@ -95,7 +101,7 @@ function love.update( dt )
 end
 
 function startServer()
-	server, err = network:startServer( NUMBER_OF_PLAYERS, PORT, PING_UPDATE_TIME )
+	server, err = network:startServer( NUMBER_OF_PLAYERS, PORT )
 
 	if server then
 		setServerCallbacks()
@@ -250,3 +256,10 @@ function love.mousepressed( x, y, button )
 	end
 end
 
+function love.keypressed( key )
+	if key == "f5" then
+		if not client and not server then
+			requestServerLists()
+		end
+	end
+end

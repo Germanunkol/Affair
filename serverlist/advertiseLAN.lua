@@ -6,7 +6,8 @@ local socket = require("socket")
 local advertiseLAN = {}
 
 -- Receive the data which should be sent to clients when they request it:
-function advertiseLAN:setData( port, id, data )
+function advertiseLAN:setData( portUDP, port, id, data )
+	self.portUDP = portUDP
 	self.port = port
 	self.id = id
 	self.data = data
@@ -15,8 +16,9 @@ end
 function advertiseLAN:startListening()
 	self.udp = socket.udp()
 	self.udp:settimeout(0)
-	print(self.udp:setoption("broadcast", true))
-	print(self.udp:setsockname('*',self.port))
+	self.udp:setoption("broadcast", true)
+	self.udp:setsockname('*',self.portUDP)
+	print("... port", self.portUDP)
 end
 
 function advertiseLAN:stopListening()
@@ -28,16 +30,16 @@ end
 function advertiseLAN:update( dt )
 	local data, ip, port = self.udp:receivefrom()
 	if data then
-		print("raw:", data, ip, port)
 		self:receive( data, ip, port )
 	end
 end
 
 function advertiseLAN:receive( data, ip, port )
 	local id = data:match("ServerlistRequest|(.-)\n?$")
+	print("checking", data, ip, port, id )
 	if id and id == self.id then
-		print("answering:", ip, port, self.data)
 		self.udp:sendto( "ServerlistReply|" .. self.id .. "|" .. self.port .. "|" .. self.data .. "\n", ip, port )
+		print("[ADVERTISE] Received LAN request. Game ID matched. Answered request.")
 	end
 end
 

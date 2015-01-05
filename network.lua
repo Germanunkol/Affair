@@ -29,14 +29,15 @@ local connected = false
 
 local users = {}
 
-local PORT = 3410
+local PORT = 3410	-- port used to send data (TCP)
+local UDP_BROADCAST_PORT = 3410	-- port used to build up LAN sever list (UDP)
 
 local server = nil
 local client = nil
 
 function network:startServer( maxNumberOfPlayers, port, pingTime )
 	local createServer = function()
-			return Server:new( maxNumberOfPlayers, port or PORT, pingTime )
+			return Server:new( maxNumberOfPlayers, port or PORT, pingTime, UDP_BROADCAST_PORT )
 	end
 
 	success, server = pcall( createServer )
@@ -176,14 +177,16 @@ function network:requestServerList( id, url )
 	t:start( cout, self.serverlistRemote.url, self.serverlistRemote.id )
 end
 
-function network:requestServerListLAN( id, port )
+function network:requestServerListLAN( id, portUDP )
 	assert( self.serverlistLocal.id or id, "When calling requestServerListLAN for the first time, a game-ID (Name of your game) must be given" )
 
 	if id then
 		self.serverlistLocal.id = id
 	end
 
-	requestLAN:start( self.serverlistLocal.id, port or PORT )
+	self.serverlistLocal.entries = {}
+
+	requestLAN:start( self.serverlistLocal.id, portUDP or UDP_BROADCAST_PORT )
 	self.serverlistLocal.receiving = true
 end
 

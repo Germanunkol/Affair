@@ -46,11 +46,12 @@ Then connect a client to it by running the client example above.
 A server is started using the **network:startServer** function:
 
 ```
-server, err = network:startServer( numberOfPlayers, port, pingUpdate )
+server, err = network:startServer( numberOfPlayers, port, pingUpdate, portUDP )
 ```
 - **numberOfPlayers** is the maximum number of clients that may connect to the server (default 16).
 - **port** is the port number (Servers will need to port-forward this port if they're behind a router. Use a value between 1025 and 65535, default is 3410)
 - **pingUpdate** specifies how often the server should ping clients. (To check for timeouts, for example. Value in seconds, default is 5 seconds.)
+- **portUDP** sets the port number to be used for creating a LAN server list. Use a value between 1025 and 65535, default is 3410)
 Upon success, this function returns a server object which can be used to control the server (send stuff, kick clients, close connections, get list of clients, get number of clients etc.)
 If the function fails, it returns nil and an err will be filled with the error message.
 

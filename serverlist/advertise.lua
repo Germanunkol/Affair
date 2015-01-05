@@ -4,21 +4,21 @@
 
 local http = require("socket.http")
 
-print( "[ADVERTISE] Attempting to connect" )
 
 local URL = arg[1] or ""
 local PORT = arg[2] or ""
 local ID = arg[3] or ""
 local INFO = arg[4] or ""
 
-print( "[ADVERTISE] Contacting: " .. URL )
+--print( "[ADVERTISE] Contacting: " .. URL )
 
 local body = ""
 body = body .. "port=" .. PORT.. "&"
 body = body .. "id=" .. ID .. "&"
 body = body .. "info=" .. INFO .. "&"
 
-print( http.request( URL, body ) )
+http.request( URL, body )
+print( "[ADVERTISE] Advertisement sent:", PORT, ID, INFO )
 
 -- Close this process:
 os.exit()
