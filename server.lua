@@ -84,7 +84,7 @@ function Server:update( dt )
 
 		for k, user in pairs(userList) do			
 
-			local data, msg, partOfLine = user.connection:receive( 100 )
+			local data, msg, partOfLine = user.connection:receive( 1000 )
 			if data then
 				partMessage = partMessage .. data
 			else
@@ -117,6 +117,7 @@ function Server:update( dt )
 					messageLength, headerLength = utility:headerToLength( partMessage:sub(1,5) )
 					if messageLength and headerLength then
 						partMessage = partMessage:sub(headerLength + 1, #partMessage )
+						print("Receivng message of length:", messageLength)
 					end
 				end
 			end
@@ -124,12 +125,18 @@ function Server:update( dt )
 			-- if I already know how long the message should be:
 			if messageLength then
 				if #partMessage >= messageLength then
-					command, content = string.match( partMessage, "(.)(.*)")
+					-- Get actual message:
+					local currentMsg = partMessage:sub(1, messageLength)
+
+					-- Remember rest of already received messages:
+					partMessage = partMessage:sub( messageLength + 1, #partMessage )
+
+					command, content = string.match( currentMsg, "(.)(.*)")
 					command = string.byte( command )
 
 					self:received( command, content, user )
-					partMessage = partMessage:sub( messageLength + 1, #partMessage)
 					messageLength = nil
+
 				end
 			end
 
@@ -214,7 +221,7 @@ function Server:update( dt )
 end
 
 function Server:received( command, msg, user )
-	print("recv:", command, msg)
+	print("\trecv:", command, msg)
 	if command == CMD.PONG then
 		if user.ping.waitingForPong then
 			user.ping.pingReturnTime = math.floor(1000*user.ping.timer+0.5)
@@ -333,6 +340,8 @@ function Server:send( command, msg, user )
 		assert( len < 256^4, "Length of packet must not be larger than 4GB" )
 
 		fullMsg = utility:lengthToHeader( len ) .. fullMsg
+
+		print("Sending message of length:", len)
 		
 		--user.connection:send( string.char(command) .. (msg or "") .. "\n" )
 		local result, err, num = user.connection:send( fullMsg )

@@ -49,13 +49,8 @@ function disconnected( user )
 	print( user.playerName .. " has has left. (ID: " .. user.id .. ")" )
 end
 function synchronize( user )
-	-- Careful! The map includes line breaks -> so make sure to replace those!
-	-- Remember never to send line breaks using this engine, they're used internally
-	-- as delimiters.
-	-- The map doesn't contain any pipe symbols, so it's save to replace "\n" with "|":
-	local map = myMapString:gsub("\n", "|")
 	-- Send the map to the new client
-	server:send( COMMAND.MAP, map, user )
+	server:send( COMMAND.MAP, myMapString, user )
 	print("sent map")
 end
 function authorize( user )
@@ -108,8 +103,8 @@ function sleep( sec )
 end
 
 -- Fill the map string with something long for testing purposes:
-for y = 1, 30 do
-	for x = 1, 30 do
+for y = 1, 900 do
+	for x = 1, 90 do
 		if math.random(10) == 1 then
 			myMapString = myMapString .. math.random(9)
 		else
