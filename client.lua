@@ -62,7 +62,7 @@ end
 
 function Client:update( dt )
 	if self.conn then
-		local data, msg, partOfLine = self.conn:receive( 1000 )
+		local data, msg, partOfLine = self.conn:receive( 9999 )
 		if data then
 			partMessage = partMessage .. data
 		else

@@ -84,7 +84,7 @@ function Server:update( dt )
 
 		for k, user in pairs(userList) do			
 
-			local data, msg, partOfLine = user.connection:receive( 1000 )
+			local data, msg, partOfLine = user.connection:receive( 9999 )
 			if data then
 				partMessage = partMessage .. data
 			else
