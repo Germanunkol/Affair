@@ -16,8 +16,13 @@ body = body .. "port=" .. PORT.. "&"
 body = body .. "id=" .. ID .. "&"
 body = body .. "info=" .. INFO .. "&"
 
-print(http.request( URL, body ))
-print( "[ADVERTISE] Advertisement sent:", PORT, ID, INFO )
+result = http.request( URL, body )
+local err = result:match( "%[Warning:%](.-)\n" )
+if err then
+	print( "[ADVERTISE] " .. err )
+else
+	print( "[ADVERTISE] Advertisement sent:", PORT, ID, INFO )
+end
 
 -- Close this process:
 os.exit()
