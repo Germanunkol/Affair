@@ -54,6 +54,16 @@ server, err = network:startServer( numberOfPlayers, port, pingUpdate, portUDP )
 - **portUDP** sets the port number to be used for creating a LAN server list. Use a value between 1025 and 65535, default is 3410)
 Upon success, this function returns a server object which can be used to control the server (send stuff, kick clients, close connections, get list of clients, get number of clients etc.)
 If the function fails, it returns nil and an err will be filled with the error message.
+Most of the time, port, pingUpdate and portUDP can be left at their defaults, so you would call the function like so:
+```lua
+server, err = network:startServer( 8 )	-- creates a server which allows a maximum of 8 connections.
+if server then
+	...
+else
+	print("Could not start server: " .. err )
+end
+```
+
 
 ### Callbacks: ###
 
