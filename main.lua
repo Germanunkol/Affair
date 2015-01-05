@@ -23,6 +23,8 @@ local MAIN_SERVER_ADDRESS = "http://germanunkol.de/test/Affair/"
 local buttons = {}
 
 local TITLE = "Love Affair"
+local ERROR_MSG = ""
+local ERROR_TIMER = 0
 
 function love.load( args )
 
@@ -107,6 +109,7 @@ end
 
 function love.update( dt )
 	network:update( dt )
+	ERROR_TIMER = ERROR_TIMER - dt
 end
 
 function startServer()
@@ -142,6 +145,7 @@ end
 function setServerCallbacks()
 	server.callbacks.userFullyConnected = connected
 	server.callbacks.disconnectedUser = disconnected
+	server.callbacks.advertisement = advertisementCallback
 end
 
 function setClientCallbacks()
@@ -216,6 +220,11 @@ function finishedServerlistRemote( list )
 	print("Finished retreiving servers. Servers found:", #list )
 end
 
+function advertisementCallback( err )
+	ERROR_MSG = err
+	ERROR_TIMER = 10
+end
+
 function drawServerList()
 	love.graphics.setColor( 255,255,255,50 )
 	love.graphics.rectangle( "fill", 50, 40, love.graphics.getWidth() - 100, 20 )
@@ -262,6 +271,14 @@ function drawTitle()
 	love.graphics.rectangle( "fill", 3, 3, love.graphics.getWidth()-6, 25 )
 	love.graphics.setColor( 255,255,255,255 )
 	love.graphics.printf( TITLE, 3, 10, love.graphics.getWidth()-6, "center" )
+
+	if ERROR_TIMER > 0 then
+		love.graphics.setColor( 255,64,32,100 )
+		love.graphics.rectangle( "fill", 3, love.graphics.getHeight() - 28,
+		love.graphics.getWidth()-6, 25 )
+		love.graphics.setColor( 255,255,255,255 )
+		love.graphics.printf( ERROR_MSG, 3, love.graphics.getHeight() - 21, love.graphics.getWidth()-6, "center" )
+	end
 end
 
 function love.draw()

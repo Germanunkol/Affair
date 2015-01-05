@@ -212,6 +212,9 @@ function Server:update( dt )
 			end
 			advertiseLAN:update( dt )
 		end
+		if self.advertisement.thread then
+			self:advertiseUpdate()
+		end
 
 		return true
 	else
@@ -481,6 +484,18 @@ function Server:advertise( data, id, url )
 		-- Remove a possible trailing slash from the URL:
 		self.advertisement.url = url:match( "(.-)/?$" )
 	end
+
+	-- If the server is NOT dedicated (i.e. not headless), but run in Löve instead, then
+	-- let a sub-thread handle advertisement, so that messages can be received from it.
+	if love and not self.advertisement.thread then
+		self.advertisement.thread = love.thread.newThread( BASE .. "serverlist/advertiseThread.lua" )
+		local cin = love.thread.newChannel()
+		local cout = love.thread.newChannel()
+		self.advertisement.cin = cin
+		self.advertisement.cout = cout
+		self.advertisement.thread:start( cin, cout )
+	end
+
 	self:advertiseNow()
 
 	if firstAdvertisement then
@@ -492,25 +507,60 @@ function Server:advertise( data, id, url )
 end
 
 function Server:unAdvertise()
-	self.advertisement.active = false
-	-- Connect to the unAdvertise script on the main server. By calling it, the server will know
-	-- that this server should be removed from the serverlist.
-	os.execute( "lua serverlist/unAdvertise.lua "
+	if love and self.advertisement.thread then
+		self.advertisement.cin:push( "unAdvertise|" )
+	else
+		-- Connect to the unAdvertise script on the main server.
+		-- By calling it, the server will know
+		-- that this server should be removed from the serverlist.
+		os.execute( "lua " .. BASE .. "/serverlist/unAdvertise.lua "
 			.. self.advertisement.url .. "/unAdvertise.php "
 			.. self.port )
+	end
 
+	self.advertisement.active = false
 	advertiseLAN:stopListening()
 end
 
 -- Called internally when server advertisement timer has run out.
 -- Starts the advertisement (or "keepalive") process:
 function Server:advertiseNow()
-	os.execute( "lua serverlist/advertise.lua "
+	if love and self.advertisement.thread then
+		self.advertisement.cin:push( "URL|" .. self.advertisement.url )
+		self.advertisement.cin:push( "INFO|" .. self.advertisement.data )
+		self.advertisement.cin:push( "ID|" .. self.advertisement.id )
+		self.advertisement.cin:push( "PORT|" .. self.port )
+		self.advertisement.cin:push( "advertise|" )
+	else
+		os.execute( "lua serverlist/advertise.lua "
 			.. self.advertisement.url .. "/advertise.php "
 			.. self.port .. " "
 			.. self.advertisement.id .. " "
 			.. self.advertisement.data .. " &" )
+	end
 	self.advertisement.timer = ADVERTISEMENT_UPDATE_TIME
+end
+
+function Server:advertiseUpdate( dt )
+	if self.advertisement.thread then
+		local msg = self.advertisement.cout:pop()
+		if msg then
+			print("[ADVERTISE] " .. msg)
+			if self.callbacks.advertisement then
+				self.callbacks.advertisement( msg )
+			end
+			if msg:find("Warning") or msg == "closed" then
+				self.advertisement.thread = nil
+			end
+		end
+		if self.advertisement.thread then
+			local err = self.advertisement.thread:getError()
+			if err then
+				print("[ADVERTISE] " .. err)
+				self.advertisement.thread = nil
+			end
+		end
+	end
 end
 
 return Server
