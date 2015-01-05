@@ -200,7 +200,7 @@ On the client, you can start looking for LAN servers using:
 ```lua
 network:requestServerListLAN( id, portUDP )
 ```
-- **id** must be the same name as given to the server:advertise call on the server. The game filters out any servers which don't have the same ID, so make sure this is set correctly.
+- **id** must be the same name as given to the server:advertise call on the server. The game filters out any servers which don't have the same ID, so make sure this is set correctly
 - **portUDP** is an optional port you can set so that the UDP broadcast works on this port. **Important:** If you change this on the client, you must also change it on the server, when calling server:advertise!
-- 
+
 You may call this function again to refresh the LAN server list (i.e. send out a new request). In this case, you can call it without parameters - the previous ones will be used.
