@@ -1,18 +1,18 @@
 # Affair - Löve Networking Library #
 
-A networking library aimed at the awesome Löve engine (love2d.org).
-This library aims to take care of the enourmous overhead of connecting, authorizing, passwords, synchronizing game states, usernames, userlist etc. involved when creating a network game.
-The goal is to make the networking very simple.
+A networking library for the awesome Löve engine (love2d.org).
+
+This library aims to take care of the enourmous overhead of connecting, authorizing, passwords, synchronizing game states, usernames, userlist etc. involved when creating a network game. There are other networking libraries available, such as [LUBE](https://love2d.org/wiki/LUBE), 
 
 Features:
-- Synchronizing of userlist (including IDs and Playernames) is done by library.
 - Callbacks for important events (new user, disconnected etc.) can be defined.
-- Server is independent of and can be run as a dedicated, headless, plain-Lua server (example included).
-- Automatic handling of usernames. If a name appears multiple times, the library automatically appends numbers and increments them.
-- Automatically synched user values - want to synch the colour of your player with other servers, and let newly joining clients also know about it? Simply call client:setUserValue( "red", 255 ) and let the library handle synchronization.
+- Automatic synchronizing of player names and player IDs
+- Server is independent of Löve and can be run as a dedicated, headless, plain-Lua server (example included).
+- Online serverlist
+- LAN serverlist (UDP-Broadcast)
+- Automatically synched user values. Simply call client:setUserValue( "red", 255 ) and let the library handle synchronization. All other clients will now have access to this user's "red" value, and it will be "255" on all clients - it will even be available on clients who join _after_ the setUserValue has been called. This way, any info about users (character, stats, position, upgrades etc.) are handled by the engine without you needing to worry about them.
 - Calculates and stores ping time of players.
-- Online serverlist - see [Germanunkol/AffairMainServer](https://github.com/Germanunkol/AffairMainServer)
-- [TODO] LAN serverlist (UDP-Broadcast)
+- Automatic handling of usernames. If a name appears multiple times, the library automatically appends numbers and increments them.
 
 ## Example: ##
 
@@ -201,6 +201,7 @@ function disconnected()
 	-- Only update the data field in the advertisement, leave the id and URL the same:
 	server:advertise( "Players:" .. #players - 1 )
 end
+```
 
 ### LAN: ###
 
