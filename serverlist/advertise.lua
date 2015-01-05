@@ -17,7 +17,7 @@ body = body .. "port=" .. PORT.. "&"
 body = body .. "id=" .. ID .. "&"
 body = body .. "info=" .. INFO .. "&"
 
-http.request( URL, body )
+print(http.request( URL, body ))
 print( "[ADVERTISE] Advertisement sent:", PORT, ID, INFO )
 
 -- Close this process:

@@ -117,7 +117,6 @@ function Server:update( dt )
 					messageLength, headerLength = utility:headerToLength( partMessage:sub(1,5) )
 					if messageLength and headerLength then
 						partMessage = partMessage:sub(headerLength + 1, #partMessage )
-						print("Receivng message of length:", messageLength)
 					end
 				end
 			end
@@ -221,7 +220,6 @@ function Server:update( dt )
 end
 
 function Server:received( command, msg, user )
-	print("\trecv:", command, msg)
 	if command == CMD.PONG then
 		if user.ping.waitingForPong then
 			user.ping.pingReturnTime = math.floor(1000*user.ping.timer+0.5)
@@ -341,8 +339,6 @@ function Server:send( command, msg, user )
 
 		fullMsg = utility:lengthToHeader( len ) .. fullMsg
 
-		print("Sending message of length:", len)
-		
 		--user.connection:send( string.char(command) .. (msg or "") .. "\n" )
 		local result, err, num = user.connection:send( fullMsg )
 		while err == "timeout" do

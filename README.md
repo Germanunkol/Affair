@@ -141,7 +141,7 @@ Note: You do not need to keep a list of all users. Use client:getUsers() to get 
 
 ## Remarks: ##
 
-Maximum size of a message is 4 GB. You should always stay well below, of course - but hey, I won't stop you.
+Maximum size of a message is 4 GB (to be more precise: 256^4 bytes). You should always stay well below, of course - but hey, I won't stop you.
 
 ## Server lists: ##
 ### Online: ###

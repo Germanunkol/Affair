@@ -89,8 +89,6 @@ function Client:update( dt )
 				messageLength, headerLength = utility:headerToLength( partMessage:sub(1,5) )
 				if messageLength and headerLength then
 					partMessage = partMessage:sub(headerLength + 1, #partMessage )
-					print("Receivng message of length:", messageLength)
-					print("\t",partMessage:sub(1, 10) .. "...")
 				end
 			end
 		end
@@ -148,7 +146,6 @@ function Client:update( dt )
 end
 
 function Client:received( command, msg )
-	print("\trecv:", command, msg)
 	if command == CMD.PING then
 		-- Respond to ping:
 		self:send( CMD.PONG, "" )
@@ -226,7 +223,6 @@ function Client:send( command, msg )
 	assert( len < 256^4, "Length of packet must not be larger than 4GB" )
 
 	fullMsg = utility:lengthToHeader( len ) .. fullMsg
-	print("Sending message of length:", len)
 
 	local result, err, num = self.conn:send( fullMsg )
 	while err == "timeout" do
