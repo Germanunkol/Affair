@@ -1,10 +1,10 @@
 # Affair - Löve Networking Library #
 
-A networking library for the awesome Löve engine (love2d.org).
+A networking library for the awesome [Löve engine](http://love2d.org).
 
-This library aims to take care of the enourmous overhead of connecting, authorizing, passwords, synchronizing game states, usernames, userlist etc. involved when creating a network game. There are other networking libraries available, such as [LUBE](https://love2d.org/wiki/LUBE), 
+This library aims to take care of the enourmous overhead of connecting, authorizing, passwords, synchronizing game states, usernames, userlist etc. involved when creating a network game. There are other networking libraries available, such as [LUBE](https://love2d.org/wiki/LUBE), [Noobhub](https://love2d.org/wiki/Noobhub), or you could even use plain [Luasocket](http://w3.impa.br/~diego/software/luasocket/) (which this library uses internally). However, _Affair_ is much more high-level. Because it has many functions which are frequently used in multiplayer games, using _Affair_ should speed up multiplayer game development a lot.
 
-Features:
+## Features: ##
 - Callbacks for important events (new user, disconnected etc.) can be defined.
 - Automatic synchronizing of player names and player IDs
 - Server is independent of Löve and can be run as a dedicated, headless, plain-Lua server (example included).
