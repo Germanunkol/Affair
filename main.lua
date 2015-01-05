@@ -15,23 +15,29 @@ local server = nil
 local client = nil
 
 local NUMBER_OF_PLAYERS = 16	-- Server should not allow more than 16 connections
-local PORT = 3411				-- The port which might need to be forwarded
+local PORT = 3412				-- The port which might need to be forwarded
 local ADDRESS = "localhost"		-- Fallback address to connect client to
 
 local MAIN_SERVER_ADDRESS = "http://germanunkol.de/test/Affair/"
 
 local buttons = {}
 
+local TITLE = "Love Affair"
+
 function love.load( args )
 
 	local startingClient = false
 	local startingServer = false
+	local addressFound = false
 	local serverlist = false
 	for k, v in ipairs( args ) do
 		if v == "--client" then
+			startingClient = true
 			if args[k+1] then
-				startingClient = true
+				addressFound = true
 				ADDRESS = args[k+1]
+			else
+				serverlist = true
 			end
 		end
 		if v == "--server" then
@@ -54,13 +60,16 @@ function love.load( args )
 	end
 	
 	if startingServer then
+		addressFound = true
+		ADDRESS = 'localhost'
 		startServer()
 	end
-	if startingClient then
+	if startingClient and addressFound then
 		startClient()
 	end
 
-	if serverlist then
+	if serverlist and not addressFound then
+		TITLE = "Server List"
 		requestServerLists()
 	end
 end
@@ -93,7 +102,7 @@ function love.quit()
 end
 
 function printHelp()
-	print("Usage:\n\tStart Server:\n\t\tlove . --server\n\n\tStart Client:\n\t\tlove . --client [ADDRESS]\n\t\t(Example: love . --client 192.168.0.10\n\n\tList online Servers:\n\t\tlove . --list")
+	print("Usage:\n\tStart Server:\n\t\tlove . --server\n\n\tStart Client:\n\t\tlove . --client [ADDRESS]\n\t\t(Omit ADDRESS to load list of servers)\n")
 end
 
 function love.update( dt )
@@ -106,6 +115,7 @@ function startServer()
 	if server then
 		setServerCallbacks()
 		server:advertise( "Players:0", "ExampleServer", MAIN_SERVER_ADDRESS )
+		TITLE = "Server @ Port " .. PORT
 	else
 		print("Error starting server:", err)
 		love.event.quit()
@@ -117,6 +127,11 @@ function startClient()
 	
 	if client then
 		setClientCallbacks()
+		if server then
+			TITLE = "Server + Client: Connected to " .. ADDRESS .. ", Port: " .. PORT
+		else
+			TITLE = "Client: Connected to " .. ADDRESS .. ": Port: " .. PORT
+		end
 	else
 		print("Error connecting client:", err)
 		love.event.quit()
@@ -133,12 +148,13 @@ function setClientCallbacks()
 end
 
 function connected()
-	local players = network:getUsers()
+	local players,numPlayers = network:getUsers()
 	-- Only update the data field in the advertisement, leave the id and URL the same:
-	server:advertise( "Players:" .. #players )
+	server:advertise( "Players:" .. numPlayers )
+	print("Connected.", players, numPlayers)
 end
 function disconnected()
-	local players = network:getUsers()
+	local players,numPlayers = network:getUsers()
 	-- Only update the data field in the advertisement, leave the id and URL the same:
 	server:advertise( "Players:" .. #players - 1 )
 end
@@ -154,7 +170,7 @@ function newServerEntryRemote( entry )
 
 	-- Create new button:
 	local b = {
-		x = 50, y = 52 + 20*(#list - 1),
+		x = 50, y = 62 + 20*(#list - 1),
 		w = love.graphics.getWidth() - 100,
 		h = 18,
 		text = entry.address .. "\t" .. entry.port .. "\t" .. entry.info,
@@ -201,9 +217,9 @@ end
 
 function drawServerList()
 	love.graphics.setColor( 255,255,255,50 )
-	love.graphics.rectangle( "fill", 50, 30, love.graphics.getWidth() - 100, 20 )
+	love.graphics.rectangle( "fill", 50, 40, love.graphics.getWidth() - 100, 20 )
 	love.graphics.setColor( 255,255,255,255 )
-	love.graphics.print( "Servers:", 55, 33 )
+	love.graphics.print( "Servers:", 55, 43 )
 
 	love.graphics.setColor( 255,255,255,50 )
 	love.graphics.rectangle( "fill", 50, love.graphics.getHeight()/2 + 30,
@@ -222,28 +238,39 @@ end
 function drawPlayerList()
 
 	love.graphics.setColor( 255,255,255,50 )
-	love.graphics.rectangle( "fill", 50, 30, 250, 18 )
+	love.graphics.rectangle( "fill", 50, 40, 250, 18 )
 	love.graphics.setColor( 255,255,255,255 )
-	love.graphics.print( "Players:", 55, 33 )
+	love.graphics.print( "Players:", 55, 43 )
 
 	local players = network:getUsers()
 
-	local y = 50
-	for k, p in pairs( players ) do
-		love.graphics.setColor( 255,255,255,25 )
-		love.graphics.rectangle( "fill", 50, y, 250, 18 )
-		love.graphics.setColor( 255,255,255,255 )
-		love.graphics.print( p.id .. " " .. p.playerName .. " [" .. p.ping.pingReturnTime .. "ms]", 55, y + 3 )
-		y = y + 20
+	if players then
+		local y = 60
+		for k, p in pairs( players ) do
+			love.graphics.setColor( 255,255,255,25 )
+			love.graphics.rectangle( "fill", 50, y, 250, 18 )
+			love.graphics.setColor( 255,255,255,255 )
+			love.graphics.print( p.id .. " " .. p.playerName .. " [" .. p.ping.pingReturnTime .. "ms]", 55, y + 3 )
+			y = y + 20
+		end
 	end
+end
+
+function drawTitle()
+	love.graphics.setColor( 255,128,64,100 )
+	love.graphics.rectangle( "fill", 3, 3, love.graphics.getWidth()-6, 25 )
+	love.graphics.setColor( 255,255,255,255 )
+	love.graphics.printf( TITLE, 3, 10, love.graphics.getWidth()-6, "center" )
 end
 
 function love.draw()
 	if not client and not server then
 		drawServerList()
-	elseif client then
+	elseif client or server then
 		drawPlayerList()
 	end
+
+	drawTitle()
 end
 
 function love.mousepressed( x, y, button )

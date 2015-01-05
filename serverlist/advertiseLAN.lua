@@ -17,7 +17,7 @@ function advertiseLAN:startListening()
 	self.udp = socket.udp()
 	self.udp:settimeout(0)
 	self.udp:setoption("broadcast", true)
-	self.udp:setsockname('*',self.portUDP)
+	--self.udp:setsockname('*',self.portUDP)
 	print("... port", self.portUDP)
 end
 
@@ -30,6 +30,7 @@ end
 function advertiseLAN:update( dt )
 	local data, ip, port = self.udp:receivefrom()
 	if data then
+		print("raw:", data, ip, port)
 		self:receive( data, ip, port )
 	end
 end

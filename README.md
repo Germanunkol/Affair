@@ -56,7 +56,8 @@ Upon success, this function returns a server object which can be used to control
 If the function fails, it returns nil and an err will be filled with the error message.
 Most of the time, port, pingUpdate and portUDP can be left at their defaults, so you would call the function like so:
 ```lua
-server, err = network:startServer( 8 )	-- creates a server which allows a maximum of 8 connections.
+-- creates a server which allows a maximum of 8 connections.
+server, err = network:startServer( 8 )
 if server then
 	...
 else

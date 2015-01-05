@@ -122,11 +122,11 @@ function network:update( dt )
 end
 
 function network:getUsers()
-	if client then
-		return client:getUsers(), client:getNumUsers()
-	end
 	if server then
 		return server:getUsers(), server:getNumUsers()
+	end
+	if client then
+		return client:getUsers(), client:getNumUsers()
 	end
 end
 
