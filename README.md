@@ -93,8 +93,7 @@ Example usage: The authorize event could return _true_ while the server is in a 
 Note: You don't need to worry about the maximum number of players here - if the server is already full, then the engine will not authorize the player and won't even call this event.
 _authMsg_ is the string which the client used when calling network:startClient. This way, you can check if the client is using the same game version as you, or entered the correct password.
 
-**server.callbacks.customDataChanged( user, value, key )**: Called whenever a client changes their customUserData. The userdata is already synched with other clients, but if you want to do something when user data changes (example: start game when sets his "ready" value to true), then this is the place
-.
+**server.callbacks.customDataChanged( user, value, key, previousValue )**: Called whenever a client changes their customUserData. The userdata is already synched with other clients, but if you want to do something when user data changes (example: start game when sets his "ready" value to true), then this is the place. The previousValue is the value which the user had set before - it could be nil, if this value is set for the first time.
 
 **server.callbacks.disconnectedUser( user )**: Called when a user has disconnected. Note: after this call, the "user" table will be invalid. Don't attempt to use it again - but you're allowed to access it to print the user name of the client who left and similar:
 ```lua

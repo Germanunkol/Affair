@@ -216,13 +216,17 @@ function Server:received( command, msg, user )
 		local keyType, key, valueType, value = string.match( msg, "(.*)|(.*)|(.*)|(.*)" )
 		key = stringToType( key, keyType )
 		value = stringToType( value, valueType )
+
+		-- Remember what the value used to be:
+		local prevValue = user.customData[key]
+		-- Set new value:
 		user.customData[key] = value
 
 		-- Let others know about this value:
 		self:send( CMD.USER_VALUE, user.id .. "|" .. msg )
 
 		if self.callbacks.customDataChanged then
-			self.callbacks.customDataChanged( user, value, key )
+			self.callbacks.customDataChanged( user, value, key, prevValue )
 		end
 
 	elseif self.callbacks.received then
