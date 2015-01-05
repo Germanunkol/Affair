@@ -3,6 +3,8 @@ local BASE = (...):match("(.-)[^%.]+$")
 local Server = require( BASE .. "server" )
 local Client = require( BASE .. "client" )
 
+local requestLAN = require( BASE .. "serverlist/requestLAN" )
+
 local network = {}
 network.callbacks = {
 	newServerEntryRemote = nil,
@@ -109,18 +111,11 @@ function network:update( dt )
 			self:newServerListEntryRemote( msg )
 		end
 	end
-	if self.serverlistLocal.thread then
-		-- Check for errors:
-		local err = self.serverlistLocal.thread:getError()
-		if err then
-			print("THREAD ERROR: " .. err)
-			self.serverlistLocal.thread = nil
-		end
-
-		-- Get any new messages:
-		local msg = self.serverlistLocal.cout:pop()
-		if msg then
-			self:newServerListEntryLocal( msg )
+	if self.serverlistLocal.receiving then
+		self.serverlistLocal.receiving = true
+		local ip, port, info = requestLAN:update( dt )
+		if ip and port and info then
+			self:newServerListEntryLocal( ip, port, info )
 		end
 	end
 end
@@ -150,6 +145,9 @@ function stringToType( value, goalType )
 	return value
 end
 
+-- Start requesting the serverlist from a remote URL (a 'main server').
+-- The main server must have the AffairMainServer scripts at path given by the URL.
+-- This can also be called again to refresh the list. In this case, no id or url must be given.
 function network:requestServerList( id, url )
 
 	assert( self.serverlistRemote.id or id, "When calling requestServerList for the first time, a game-ID (Name of your game) must be given" )
@@ -178,8 +176,20 @@ function network:requestServerList( id, url )
 	t:start( cout, self.serverlistRemote.url, self.serverlistRemote.id )
 end
 
-function network:requestServerListLAN()
-	
+function network:requestServerListLAN( id, port )
+	assert( self.serverlistLocal.id or id, "When calling requestServerListLAN for the first time, a game-ID (Name of your game) must be given" )
+
+	if id then
+		self.serverlistLocal.id = id
+	end
+
+	requestLAN:start( self.serverlistLocal.id, port or PORT )
+	self.serverlistLocal.receiving = true
+end
+
+function network:stopRequestServerListLAN()
+	requestLAN:stop()
+	self.serverlistLocal.receiving = false
 end
 
 function network:newServerListEntryRemote( msg )
@@ -213,22 +223,15 @@ function network:getServerListRemote()
 	return self.serverlistRemote.entries
 end
 
-function network:newServerListEntryLocal( msg )
-	if msg == "End" then
-		self.serverlistLocal.thread = nil
-	else
-		local address, port, info = msg:match("(.*):(%S*)%s(.*)")
-		if address and port and info then
-			local e = {
-				address = address,
-				port = tonumber(port),
-				info = info,
-			}
-			table.insert( self.serverlistLocal.entries, e )
-			if self.callbacks.newServerEntryLocal then
-				self.callbacks.newServerEntryLocal( e )
-			end
-		end
+function network:newServerListEntryLocal( ip, port, info )
+	local e = {
+		address = ip,
+		port = tonumber(port),
+		info = info,
+	}
+	table.insert( self.serverlistLocal.entries, e )
+	if self.callbacks.newServerEntryLocal then
+		self.callbacks.newServerEntryLocal( e )
 	end
 end
 

@@ -5,6 +5,8 @@ local socket = require("socket")
 local User = require( BASE .. "user" )
 local CMD = require( BASE .. "commands" )
 
+local advertiseLAN = require( BASE .. "serverlist/advertiseLAN" )
+
 local ADVERTISEMENT_UPDATE_TIME = 60
 
 local Server = {}
@@ -148,6 +150,7 @@ function Server:update( dt )
 			if self.advertisement.timer < 0 then
 				self:advertiseNow()
 			end
+			advertiseLAN:update( dt )
 		end
 
 		return true
@@ -383,6 +386,19 @@ function Server:advertise( data, id, url )
 	assert( data, "server:advertise called without any information." )
 	assert( not data:find("%s"),
 		"Data passed to server:advertise must not contain whitespace. Remove all space and tab characters!" )
+	assert( not data:find("[^%.,a-zA-Z0-9:;]"),
+		"Data passed to server:advertise must not contain special characters! Allowed characters are: a-z A-Z 0-9 , . : ;" )
+
+	if id then
+	assert( not id:find("[^%.,a-zA-Z0-9:;]"),
+		"ID passed to server:advertise must not contain special characters! Allowed characters are: a-z A-Z 0-9 , . : ;" )
+	end
+
+
+	local firstAdvertisement = false
+	if not self.advertisement.data then
+		firstAdvertisement = true
+	end
 
 	self.advertisement.data = data
 	self.advertisement.active = true
@@ -395,6 +411,13 @@ function Server:advertise( data, id, url )
 		self.advertisement.url = url:match( "(.-)/?$" )
 	end
 	self:advertiseNow()
+
+	if firstAdvertisement then
+		advertiseLAN:setData( self.port, self.advertisement.id, self.advertisement.data )
+		advertiseLAN:startListening()
+	else
+		advertiseLAN:setData( self.port, self.advertisement.id, self.advertisement.data )
+	end
 end
 
 function Server:unAdvertise()
@@ -404,6 +427,8 @@ function Server:unAdvertise()
 	os.execute( "lua serverlist/unAdvertise.lua "
 			.. self.advertisement.url .. "/unAdvertise.php "
 			.. self.port )
+
+	advertiseLAN:stopListening()
 end
 
 -- Called internally when server advertisement timer has run out.

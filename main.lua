@@ -62,11 +62,17 @@ function love.load( args )
 	end
 
 	if serverlist then
+		-- Set callbacks for remote server list:
 		network.callbacks.newServerEntryRemote = newServerEntryRemote
 		network.callbacks.finishedServerlistRemote = finishedServerlistRemote
 
+		-- Set callback for LAN server list:
 		network.callbacks.newServerEntryLocal = newServerEntryLocal
+
+		-- Request server lists ("ExampleServer is the name of the game used on the server
+		-- for advertising):
 		network:requestServerList( "ExampleServer", MAIN_SERVER_ADDRESS )
+		network:requestServerListLAN( "ExampleServer", PORT )
 	end
 end
 
@@ -101,7 +107,7 @@ function startServer()
 end
 
 function startClient()
-	client, err = network:startClient( ADDRESS, "", PORT )
+	client, err = network:startClient( ADDRESS, "Anonymous", PORT )
 	
 	if client then
 		setClientCallbacks()
@@ -151,6 +157,26 @@ function newServerEntryRemote( entry )
 	table.insert( buttons, b )
 end
 
+function newServerEntryLocal( entry )
+	print("Server found at (LAN):\n" ..
+		"\tAddress: " .. entry.address .. "\n" ..
+		"\tPort: " .. entry.port .. "\n" ..
+		"\tInfo: " .. entry.info)
+
+	local list = network:getServerListLocal()
+
+	-- Create new button:
+	local b = {
+		x = 50, y = love.graphics.getHeight()/2 + 52 + 20*(#list - 1),
+		w = love.graphics.getWidth() - 100,
+		h = 18,
+		text = entry.address .. "\t" .. entry.port .. "\t" .. entry.info,
+		event = function() chooseServer( entry ) end
+	}
+	table.insert( buttons, b )
+end
+
+
 function chooseServer( serverEntry )
 	for k, v in pairs(serverEntry) do
 		print(k,v)
@@ -173,6 +199,12 @@ function drawServerList()
 	love.graphics.setColor( 255,255,255,255 )
 	love.graphics.print( "Servers:", 55, 33 )
 
+	love.graphics.setColor( 255,255,255,50 )
+	love.graphics.rectangle( "fill", 50, love.graphics.getHeight()/2 + 30,
+			love.graphics.getWidth() - 100, 20 )
+	love.graphics.setColor( 255,255,255,255 )
+	love.graphics.print( "Servers (LAN):", 55, love.graphics.getHeight()/2 + 33 )
+
 	for k, b in pairs(buttons) do
 		love.graphics.setColor( 255,255,255,25 )
 		love.graphics.rectangle( "fill", b.x, b.y, b.w, b.h )
@@ -181,9 +213,30 @@ function drawServerList()
 	end
 end
 
+function drawPlayerList()
+
+	love.graphics.setColor( 255,255,255,50 )
+	love.graphics.rectangle( "fill", 50, 30, 250, 18 )
+	love.graphics.setColor( 255,255,255,255 )
+	love.graphics.print( "Players:", 55, 33 )
+
+	local players = network:getUsers()
+
+	local y = 50
+	for k, p in pairs( players ) do
+		love.graphics.setColor( 255,255,255,25 )
+		love.graphics.rectangle( "fill", 50, y, 250, 18 )
+		love.graphics.setColor( 255,255,255,255 )
+		love.graphics.print( p.id .. " " .. p.playerName .. " [" .. p.ping.pingReturnTime .. "ms]", 55, y + 3 )
+		y = y + 20
+	end
+end
+
 function love.draw()
 	if not client and not server then
 		drawServerList()
+	elseif client then
+		drawPlayerList()
 	end
 end
 

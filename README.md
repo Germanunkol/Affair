@@ -10,7 +10,7 @@ Features:
 - Server is independent of and can be run as a dedicated, headless, plain-Lua server (example included).
 - Automatic handling of usernames. If a name appears multiple times, the library automatically appends numbers and increments them.
 - Automatically synched user values - want to synch the colour of your player with other servers, and let newly joining clients also know about it? Simply call client:setUserValue( "red", 255 ) and let the library handle synchronization.
-- TCP (reliable connection) only.
+- Calculates and stores ping time of players.
 - Online serverlist - see [Germanunkol/AffairMainServer](https://github.com/Germanunkol/AffairMainServer)
 - [TODO] LAN serverlist (UDP-Broadcast)
 
