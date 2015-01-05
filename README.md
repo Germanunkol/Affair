@@ -141,18 +141,7 @@ Note: You do not need to keep a list of all users. Use client:getUsers() to get 
 
 ## Remarks: ##
 
-**Never** send the newline character "\n"! It is used internally by the engine.
-
-If you want to send multiple lines in one message, consider replacing all "\n" characters by a character which you're sure is not in the message, say, \t (the tabulator character):
-
-```lua
-string.gsub( str, "\n", "\t" )	-- replace all \n by \t
-```
-
-On the other side, put it back together by using:
-```lua
-string.gsub( str, "\t", "\n" )	-- replace all \t by \n
-```
+Maximum size of a message is 4 GB. You should always stay well below, of course - but hey, I won't stop you.
 
 ## Server lists: ##
 ### Online: ###

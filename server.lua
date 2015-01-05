@@ -7,6 +7,8 @@ local CMD = require( BASE .. "commands" )
 
 local advertiseLAN = require( BASE .. "serverlist/advertiseLAN" )
 
+local utility = require( BASE .. "utility" )
+
 local ADVERTISEMENT_UPDATE_TIME = 60
 
 local Server = {}
@@ -18,6 +20,7 @@ local userListByName = {}
 local authorizationTimeout = {}
 
 local partMessage = ""
+local messageLength = nil
 
 local MAX_PLAYERS = 16
 
@@ -81,8 +84,58 @@ function Server:update( dt )
 
 		for k, user in pairs(userList) do			
 
-			local data, msg, partOfLine = user.connection:receive()
+			local data, msg, partOfLine = user.connection:receive( 100 )
 			if data then
+				partMessage = partMessage .. data
+			else
+
+				if msg == "timeout" then	-- only part of the message could be received
+					if #partOfLine > 0 then
+						partMessage = partMessage .. partOfLine
+					end
+				elseif msg == "closed" then
+					--broadcast("CHAT|[STAT]" .. clientList[k].playerName .. " left the game.")
+					--if client.character then
+						--broadcast("CHARACTERDEL|" .. client.playerName)
+					--end
+					numberOfUsers = numberOfUsers - 1
+
+					self:disconnectedUser( user )
+					
+					userList[k] = nil
+					if userListByName[ user.playerName ] then
+						userListByName[ user.playerName ] = nil
+					end
+				else
+					print("[NET] Err Received:", msg, data)
+				end
+			end
+
+			if not messageLength then
+				if #partMessage >= 1 then
+					local headerLength = nil
+					messageLength, headerLength = utility:headerToLength( partMessage:sub(1,5) )
+					if messageLength and headerLength then
+						partMessage = partMessage:sub(headerLength + 1, #partMessage )
+					end
+				end
+			end
+
+			-- if I already know how long the message should be:
+			if messageLength then
+				if #partMessage >= messageLength then
+					command, content = string.match( partMessage, "(.)(.*)")
+					command = string.byte( command )
+
+					self:received( command, content, user )
+					partMessage = partMessage:sub( messageLength + 1, #partMessage)
+					messageLength = nil
+				end
+			end
+
+
+
+			--[[if data then
 				if #partMessage > 0 then
 					data = partMessage .. data
 					partMessage = ""
@@ -117,7 +170,7 @@ function Server:update( dt )
 				else
 					print("[NET] Err Received:", msg, data)
 				end
-			end
+			end]]
 
 			-- Fallback for backwards compability with clients which don't send an authorization
 			-- request:
@@ -161,6 +214,7 @@ function Server:update( dt )
 end
 
 function Server:received( command, msg, user )
+	print("recv:", command, msg)
 	if command == CMD.PONG then
 		if user.ping.waitingForPong then
 			user.ping.pingReturnTime = math.floor(1000*user.ping.timer+0.5)
@@ -269,10 +323,17 @@ function Server:synchronizeUser( user )
 
 end
 
+
 function Server:send( command, msg, user )
 	-- Send to only one user:
 	if user then
-		local fullMsg = string.char(command) .. (msg or "") .. "\n"
+		local fullMsg = string.char(command) .. (msg or "") --.. "\n"
+
+		local len = #fullMsg
+		assert( len < 256^4, "Length of packet must not be larger than 4GB" )
+
+		fullMsg = utility:lengthToHeader( len ) .. fullMsg
+		
 		--user.connection:send( string.char(command) .. (msg or "") .. "\n" )
 		local result, err, num = user.connection:send( fullMsg )
 		while err == "timeout" do

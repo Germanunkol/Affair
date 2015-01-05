@@ -120,6 +120,7 @@ function startServer()
 		print("Error starting server:", err)
 		love.event.quit()
 	end
+
 end
 
 function startClient()
