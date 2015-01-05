@@ -16,9 +16,8 @@ end
 function advertiseLAN:startListening()
 	self.udp = socket.udp()
 	self.udp:settimeout(0)
+	self.udp:setsockname('*', self.portUDP)
 	self.udp:setoption("broadcast", true)
-	--self.udp:setsockname('*',self.portUDP)
-	print("... port", self.portUDP)
 end
 
 function advertiseLAN:stopListening()
@@ -30,14 +29,12 @@ end
 function advertiseLAN:update( dt )
 	local data, ip, port = self.udp:receivefrom()
 	if data then
-		print("raw:", data, ip, port)
 		self:receive( data, ip, port )
 	end
 end
 
 function advertiseLAN:receive( data, ip, port )
 	local id = data:match("ServerlistRequest|(.-)\n?$")
-	print("checking", data, ip, port, id )
 	if id and id == self.id then
 		self.udp:sendto( "ServerlistReply|" .. self.id .. "|" .. self.port .. "|" .. self.data .. "\n", ip, port )
 		print("[ADVERTISE] Received LAN request. Game ID matched. Answered request.")

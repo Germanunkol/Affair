@@ -12,9 +12,8 @@ function requestLAN:start( id, portUDP )
 	self.udp = socket.udp()
 	self.udp:settimeout(0)
 	self.udp:setoption('broadcast',true)
-	--print(self.udp:setsockname('*',portUDP))
-	assert(self.udp:sendto( "ServerlistRequest|" .. self.id .. "\n", "255.255.255.255", self.portUDP))
-	print("... port", self.portUDP)
+	self.udp:sendto( "ServerlistRequest|" .. self.id .. "\n", "255.255.255.255", self.portUDP)
+	print("Sending request to:", "255.255.255.255", self.portUDP)
 end
 
 function requestLAN:stop()
