@@ -1,9 +1,10 @@
 local BASE = (...):match("(.-)[^%.]+$")
+local BASE_SLASH = BASE:sub(1,#BASE-1) .. "/"
 
 local Server = require( BASE .. "server" )
 local Client = require( BASE .. "client" )
 
-local requestLAN = require( BASE .. "serverlist/requestLAN" )
+local requestLAN = require( BASE_SLASH .. "serverlist/requestLAN" )
 
 local network = {}
 network.callbacks = {
@@ -166,7 +167,7 @@ function network:requestServerList( id, url )
 		self.serverlistRemote.url = url .. "/getList.php"
 	end
 	
-	local t = love.thread.newThread( BASE .. "serverlist/getList.lua" )
+	local t = love.thread.newThread( BASE_SLASH .. "serverlist/getList.lua" )
 	local cin = love.thread.newChannel()
 	local cout = love.thread.newChannel()
 

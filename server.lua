@@ -1,11 +1,12 @@
 local BASE = (...):match("(.-)[^%.]+$")
+local BASE_SLASH = BASE:sub(1,#BASE-1) .. "/"
 
 local socket = require("socket")
 
 local User = require( BASE .. "user" )
 local CMD = require( BASE .. "commands" )
 
-local advertiseLAN = require( BASE .. "serverlist/advertiseLAN" )
+local advertiseLAN = require( BASE_SLASH .. "serverlist/advertiseLAN" )
 
 local utility = require( BASE .. "utility" )
 
@@ -328,7 +329,6 @@ function Server:synchronizeUser( user )
 	if self.callbacks.userFullyConnected then
 		self.callbacks.userFullyConnected( user )
 	end
-
 end
 
 
@@ -451,7 +451,7 @@ function Server:setUserValue( user, key, value )
 			"|" .. valueType .. "|" .. tostring(value) )
 end
 
-function Server:advertise( data, id, url )
+function Server:advertise( data, id, url, portUDP )
 	assert( url or self.advertisement.url,
 		"The first time you call Server:advertise, a URL must be given! (Third argument must not be empty)" )
 	assert( id or self.advertisement.id,
@@ -460,14 +460,13 @@ function Server:advertise( data, id, url )
 	assert( data, "server:advertise called without any information." )
 	assert( not data:find("%s"),
 		"Data passed to server:advertise must not contain whitespace. Remove all space and tab characters!" )
-	assert( not data:find("[^%.,a-zA-Z0-9:;]"),
-		"Data passed to server:advertise must not contain special characters! Allowed characters are: a-z A-Z 0-9 , . : ;" )
+	assert( not data:find("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?]"),
+		"Data passed to server:advertise contains invalid characters! Allowed characters are: a-z A-Z 0-9 , . : ; / - + _ % ( ) [ ] ! ?" )
 
 	if id then
-	assert( not id:find("[^%.,a-zA-Z0-9:;]"),
-		"ID passed to server:advertise must not contain special characters! Allowed characters are: a-z A-Z 0-9 , . : ;" )
+		assert( not id:find("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?]"),
+			"ID passed to server:advertise contains invalid characters! Allowed characters are: a-z A-Z 0-9 , . : ; / - + _ % ( ) [ ] ! ? '" )
 	end
-
 
 	local firstAdvertisement = false
 	if not self.advertisement.data then
@@ -484,11 +483,14 @@ function Server:advertise( data, id, url )
 		-- Remove a possible trailing slash from the URL:
 		self.advertisement.url = url:match( "(.-)/?$" )
 	end
+	if portUDP then
+		self.portUDP = portUDP
+	end
 
 	-- If the server is NOT dedicated (i.e. not headless), but run in Löve instead, then
 	-- let a sub-thread handle advertisement, so that messages can be received from it.
 	if love and not self.advertisement.thread then
-		self.advertisement.thread = love.thread.newThread( BASE .. "serverlist/advertiseThread.lua" )
+		self.advertisement.thread = love.thread.newThread( BASE_SLASH .. "/serverlist/advertiseThread.lua" )
 		local cin = love.thread.newChannel()
 		local cout = love.thread.newChannel()
 		self.advertisement.cin = cin
@@ -513,7 +515,7 @@ function Server:unAdvertise()
 		-- Connect to the unAdvertise script on the main server.
 		-- By calling it, the server will know
 		-- that this server should be removed from the serverlist.
-		os.execute( "lua " .. BASE .. "/serverlist/unAdvertise.lua "
+		os.execute( "lua " .. BASE_SLASH .. "serverlist/unAdvertise.lua "
 			.. self.advertisement.url .. "/unAdvertise.php "
 			.. self.port )
 	end
@@ -532,7 +534,7 @@ function Server:advertiseNow()
 		self.advertisement.cin:push( "PORT|" .. self.port )
 		self.advertisement.cin:push( "advertise|" )
 	else
-		os.execute( "lua serverlist/advertise.lua "
+		os.execute( "lua " .. BASE_SLASH .. "serverlist/advertise.lua "
 			.. self.advertisement.url .. "/advertise.php "
 			.. self.port .. " "
 			.. self.advertisement.id .. " "
@@ -545,11 +547,13 @@ function Server:advertiseUpdate( dt )
 	if self.advertisement.thread then
 		local msg = self.advertisement.cout:pop()
 		if msg then
-			print("[ADVERTISE] " .. msg)
-			if self.callbacks.advertisement then
-				self.callbacks.advertisement( msg )
+			if msg ~= "closed" then
+				print("[ADVERTISE] " .. msg)
+				if self.callbacks.advertisement then
+					self.callbacks.advertisement( msg )
+				end
 			end
-			if msg:find("Warning") or msg == "closed" then
+			if msg == "closed" then
 				self.advertisement.thread = nil
 			end
 		end

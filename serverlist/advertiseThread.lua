@@ -24,15 +24,30 @@ while true do
 		body = body .. "port=" .. PORT.. "&"
 		body = body .. "id=" .. ID .. "&"
 		body = body .. "info=" .. INFO .. "&"
-		local result = http.request( URL .. "/advertise.php", body )
+		local result, errCode, errorMsg, status  = http.request( URL .. "/advertise.php", body )
 		local err = result:match( "%[Warning:%](.-)\n" )
 		if err then
 			cout:push( "Warning:" .. err)
 		end
+		if not result and errCode then
+			local msg = "Warning: Could not advertise: \"" .. tostring(status) .. "\""
+			if errCode == 404 then
+				msg = msg .. "\n\tWrong URL? (" .. URL .. "/advertise.php)"
+			end
+			cout:push( msg )
+			cout:push("closed")
+		end
 	elseif command == "unAdvertise" then
 		local body = ""
 		body = body .. "port=" .. PORT.. "&"
-		local result = http.request( URL .. "/unAdvertise.php", body )
+		local result, errCode, errorMsg, status = http.request( URL .. "/unAdvertise.php", body )
+		if not result and errCode then
+			local msg = "Warning: Could not advertise: \"" .. tostring(status) .. "\""
+			if errCode == 404 then
+				msg = msg .. "\n\tWrong URL? (" .. URL .. "/advertise.php)"
+			end
+			cout:push( msg )
+		end
 		cout:push(result)
 		cout:push("closed")
 		return
