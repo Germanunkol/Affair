@@ -17,7 +17,7 @@ body = body .. "id=" .. ID .. "&"
 body = body .. "info=" .. INFO .. "&"
 
 result = http.request( URL, body )
-local err = result:match( "%[Warning:%](.-)\n" )
+local err = result:match( "%[Warning:%]%s?(.-)\n" )
 if err then
 	print( "[ADVERTISE] " .. err )
 else

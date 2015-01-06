@@ -1,5 +1,5 @@
 -- This is part of the "Affair" library.
--- This file handles sending a server's data to the main server list.
+-- This file handles sending a server's data to clients via UDP, should they request it.
 -- Luasockets must be installed for this to work. If you have Löve installed, this is already the case.
 
 local http = require("socket.http")
@@ -28,8 +28,7 @@ while true do
 		local err = result:match( "%[Warning:%](.-)\n" )
 		if err then
 			cout:push( "Warning:" .. err)
-		end
-		if not result and errCode then
+		elseif errCode then		-- don't send two warnings
 			local msg = "Warning: Could not advertise: \"" .. tostring(status) .. "\""
 			if errCode == 404 then
 				msg = msg .. "\n\tWrong URL? (" .. URL .. "/advertise.php)"
@@ -41,14 +40,16 @@ while true do
 		local body = ""
 		body = body .. "port=" .. PORT.. "&"
 		local result, errCode, errorMsg, status = http.request( URL .. "/unAdvertise.php", body )
-		if not result and errCode then
-			local msg = "Warning: Could not advertise: \"" .. tostring(status) .. "\""
+		if errCode then
+			local msg = "Warning: Could not unAdvertise: \"" .. tostring(status) .. "\""
 			if errCode == 404 then
 				msg = msg .. "\n\tWrong URL? (" .. URL .. "/advertise.php)"
 			end
 			cout:push( msg )
 		end
-		cout:push(result)
+		cout:push("closed")
+		return
+	elseif command == "close" then
 		cout:push("closed")
 		return
 	end

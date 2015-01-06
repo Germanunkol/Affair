@@ -6,7 +6,7 @@ local socket = require("socket")
 local User = require( BASE .. "user" )
 local CMD = require( BASE .. "commands" )
 
-local advertiseLAN = require( BASE_SLASH .. "serverlist/advertiseLAN" )
+--local advertiseLAN = require( BASE_SLASH .. "serverlist/advertiseLAN" )
 
 local utility = require( BASE .. "utility" )
 

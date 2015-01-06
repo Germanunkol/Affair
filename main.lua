@@ -18,7 +18,7 @@ local NUMBER_OF_PLAYERS = 16	-- Server should not allow more than 16 connections
 local PORT = 3412				-- The port which might need to be forwarded
 local ADDRESS = "localhost"		-- Fallback address to connect client to
 
-local MAIN_SERVER_ADDRESS = "http://germanunkol.de/test/Affair/"
+local MAIN_SERVER_ADDRESS = "http://germanunkol.de/Affair/"
 
 local buttons = {}
 
@@ -71,7 +71,7 @@ function love.load( args )
 	end
 
 	if serverlist and not addressFound then
-		TITLE = "Server List"
+		TITLE = "Server List (F5 to refresh)"
 		requestServerLists()
 	end
 end
@@ -81,16 +81,21 @@ function requestServerLists()
 	buttons = {}
 
 	-- Set callbacks for remote server list:
-	network.callbacks.newServerEntryRemote = newServerEntryRemote
-	network.callbacks.finishedServerlistRemote = finishedServerlistRemote
+	network.advertise.callbacks.newEntryOnline = newEntryOnline
+	network.advertise.callbacks.fetchedAllOnline = finishedServerlistOnline
 
 	-- Set callback for LAN server list:
-	network.callbacks.newServerEntryLocal = newServerEntryLocal
+	network.advertise.callbacks.newEntryLAN = newEntryLAN
+
 
 	-- Request server lists ("ExampleServer is the name of the game used on the server
 	-- for advertising):
-	network:requestServerList( "ExampleServer", MAIN_SERVER_ADDRESS )
-	network:requestServerListLAN( "ExampleServer" )
+
+	-- Set meta info needed by request:
+	network.advertise:setURL( MAIN_SERVER_ADDRESS )
+	network.advertise:setID( "ExampleServer" )
+	-- Start receiving from LAN and online server lists:
+	network.advertise:request( "both" )
 end
 
 function love.quit()
@@ -117,7 +122,12 @@ function startServer()
 
 	if server then
 		setServerCallbacks()
-		server:advertise( "Players:0", "ExampleServer", MAIN_SERVER_ADDRESS )
+
+		network.advertise:setURL( MAIN_SERVER_ADDRESS )
+		network.advertise:setID( "ExampleServer" )
+		network.advertise:setInfo( "Players:0" )
+		network.advertise:start( server, "both" )
+
 		TITLE = "Server @ Port " .. PORT
 	else
 		print("Error starting server:", err)
@@ -145,7 +155,7 @@ end
 function setServerCallbacks()
 	server.callbacks.userFullyConnected = connected
 	server.callbacks.disconnectedUser = disconnected
-	server.callbacks.advertisement = advertisementCallback
+	network.advertise.callbacks.advertiseWarnings = advertiseWarnings
 end
 
 function setClientCallbacks()
@@ -165,13 +175,13 @@ function disconnected()
 end
 
 
-function newServerEntryRemote( entry )
+function newEntryOnline( entry )
 	print("Server found at:\n" ..
 		"\tAddress: " .. entry.address .. "\n" ..
 		"\tPort: " .. entry.port .. "\n" ..
 		"\tInfo: " .. entry.info)
 
-	local list = network:getServerListRemote()
+	local list = network.advertise:getServerList( "online" )
 
 	-- Create new button:
 	local b = {
@@ -184,13 +194,13 @@ function newServerEntryRemote( entry )
 	table.insert( buttons, b )
 end
 
-function newServerEntryLocal( entry )
+function newEntryLAN( entry )
 	print("Server found at (LAN):\n" ..
 		"\tAddress: " .. entry.address .. "\n" ..
 		"\tPort: " .. entry.port .. "\n" ..
 		"\tInfo: " .. entry.info)
 
-	local list = network:getServerListLocal()
+	local list = network.advertise:getServerList( "lan" )
 
 	-- Create new button:
 	local b = {
@@ -216,11 +226,11 @@ function chooseServer( serverEntry )
 	end
 end
 
-function finishedServerlistRemote( list )
+function finishedServerlistOnline( list )
 	print("Finished retreiving servers. Servers found:", #list )
 end
 
-function advertisementCallback( err )
+function advertiseWarnings( err )
 	ERROR_MSG = err
 	ERROR_TIMER = 10
 end
@@ -274,10 +284,11 @@ function drawTitle()
 
 	if ERROR_TIMER > 0 then
 		love.graphics.setColor( 255,64,32,100 )
-		love.graphics.rectangle( "fill", 3, love.graphics.getHeight() - 28,
-		love.graphics.getWidth()-6, 25 )
+		love.graphics.rectangle( "fill", 3, love.graphics.getHeight() - 44,
+				love.graphics.getWidth()-6, 40 )
 		love.graphics.setColor( 255,255,255,255 )
-		love.graphics.printf( ERROR_MSG, 3, love.graphics.getHeight() - 21, love.graphics.getWidth()-6, "center" )
+		love.graphics.printf( ERROR_MSG, 3, love.graphics.getHeight() - 38,
+				love.graphics.getWidth()-6, "center" )
 	end
 end
 
