@@ -206,17 +206,6 @@ function Server:update( dt )
 			user.ping.timer = user.ping.timer + dt
 		end
 
-		if self.advertisement.active then
-			self.advertisement.timer = self.advertisement.timer - dt
-			if self.advertisement.timer < 0 then
-				self:advertiseNow()
-			end
-			advertiseLAN:update( dt )
-		end
-		if self.advertisement.thread then
-			self:advertiseUpdate()
-		end
-
 		return true
 	else
 		return false
@@ -431,9 +420,6 @@ function Server:close()
 			u.connection:shutdown()
 		end
 		self.conn:close()
-		if self.advertisement.active then
-			self:unAdvertise()
-		end
 	end
 	self.conn = nil
 end
@@ -449,122 +435,6 @@ function Server:setUserValue( user, key, value )
 	local valueType = type( value )
 	self:send( CMD.USER_VALUE, user.id .. "|" ..  keyType .. "|" .. tostring(key) ..
 			"|" .. valueType .. "|" .. tostring(value) )
-end
-
-function Server:advertise( data, id, url, portUDP )
-	assert( url or self.advertisement.url,
-		"The first time you call Server:advertise, a URL must be given! (Third argument must not be empty)" )
-	assert( id or self.advertisement.id,
-		"The first time you call Server:advertise, a game-ID (i.e. name of your game) must be given! (Second argument must not be empty)" )
-
-	assert( data, "server:advertise called without any information." )
-	assert( not data:find("%s"),
-		"Data passed to server:advertise must not contain whitespace. Remove all space and tab characters!" )
-	assert( not data:find("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?]"),
-		"Data passed to server:advertise contains invalid characters! Allowed characters are: a-z A-Z 0-9 , . : ; / - + _ % ( ) [ ] ! ?" )
-
-	if id then
-		assert( not id:find("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?]"),
-			"ID passed to server:advertise contains invalid characters! Allowed characters are: a-z A-Z 0-9 , . : ; / - + _ % ( ) [ ] ! ? '" )
-	end
-
-	local firstAdvertisement = false
-	if not self.advertisement.data then
-		firstAdvertisement = true
-	end
-
-	self.advertisement.data = data
-	self.advertisement.active = true
-	self.advertisement.timer = ADVERTISEMENT_UPDATE_TIME
-	if id then
-		self.advertisement.id = id
-	end
-	if url then
-		-- Remove a possible trailing slash from the URL:
-		self.advertisement.url = url:match( "(.-)/?$" )
-	end
-	if portUDP then
-		self.portUDP = portUDP
-	end
-
-	-- If the server is NOT dedicated (i.e. not headless), but run in Löve instead, then
-	-- let a sub-thread handle advertisement, so that messages can be received from it.
-	if love and not self.advertisement.thread then
-		self.advertisement.thread = love.thread.newThread( BASE_SLASH .. "/serverlist/advertiseThread.lua" )
-		local cin = love.thread.newChannel()
-		local cout = love.thread.newChannel()
-		self.advertisement.cin = cin
-		self.advertisement.cout = cout
-		self.advertisement.thread:start( cin, cout )
-	end
-
-	self:advertiseNow()
-
-	if firstAdvertisement then
-		advertiseLAN:setData( self.portUDP, self.port, self.advertisement.id, self.advertisement.data )
-		advertiseLAN:startListening()
-	else
-		advertiseLAN:setData( self.portUDP, self.port, self.advertisement.id, self.advertisement.data )
-	end
-end
-
-function Server:unAdvertise()
-	if love and self.advertisement.thread then
-		self.advertisement.cin:push( "unAdvertise|" )
-	else
-		-- Connect to the unAdvertise script on the main server.
-		-- By calling it, the server will know
-		-- that this server should be removed from the serverlist.
-		os.execute( "lua " .. BASE_SLASH .. "serverlist/unAdvertise.lua "
-			.. self.advertisement.url .. "/unAdvertise.php "
-			.. self.port )
-	end
-
-	self.advertisement.active = false
-	advertiseLAN:stopListening()
-end
-
--- Called internally when server advertisement timer has run out.
--- Starts the advertisement (or "keepalive") process:
-function Server:advertiseNow()
-	if love and self.advertisement.thread then
-		self.advertisement.cin:push( "URL|" .. self.advertisement.url )
-		self.advertisement.cin:push( "INFO|" .. self.advertisement.data )
-		self.advertisement.cin:push( "ID|" .. self.advertisement.id )
-		self.advertisement.cin:push( "PORT|" .. self.port )
-		self.advertisement.cin:push( "advertise|" )
-	else
-		os.execute( "lua " .. BASE_SLASH .. "serverlist/advertise.lua "
-			.. self.advertisement.url .. "/advertise.php "
-			.. self.port .. " "
-			.. self.advertisement.id .. " "
-			.. self.advertisement.data .. " &" )
-	end
-	self.advertisement.timer = ADVERTISEMENT_UPDATE_TIME
-end
-
-function Server:advertiseUpdate( dt )
-	if self.advertisement.thread then
-		local msg = self.advertisement.cout:pop()
-		if msg then
-			if msg ~= "closed" then
-				print("[ADVERTISE] " .. msg)
-				if self.callbacks.advertisement then
-					self.callbacks.advertisement( msg )
-				end
-			end
-			if msg == "closed" then
-				self.advertisement.thread = nil
-			end
-		end
-		if self.advertisement.thread then
-			local err = self.advertisement.thread:getError()
-			if err then
-				print("[ADVERTISE] " .. err)
-				self.advertisement.thread = nil
-			end
-		end
-	end
 end
 
 return Server

@@ -94,17 +94,6 @@ function setServerCallbacks( server )
 	server.callbacks.disconnectedUser = disconnected
 end
 
-function connected()
-	local players = network:getUsers()
-	-- Only update the data field in the advertisement, leave the id and URL the same:
-	server:advertise( "Players:" .. #players )
-end
-function disconnected()
-	local players = network:getUsers()
-	-- Only update the data field in the advertisement, leave the id and URL the same:
-	server:advertise( "Players:" .. #players - 1 )
-end
-
 -- Sleep time in second - use the socket library to make sure the 
 -- sleep is a "non busy" sleep, meaning the CPU will NOT be busy during
 -- the sleep.
