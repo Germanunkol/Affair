@@ -9,7 +9,7 @@ local server
 local MAX_PLAYERS = 16
 local PORT = 3412
 
-local MAIN_SERVER_ADDRESS = "http://germanunkol.de/test/Affair/advertise.php"
+local MAIN_SERVER_ADDRESS = "http://germanunkol.de/Affair/advertise.php"
 
 -- COMMANDs are used to identify messages.
 -- Custom commands MUST be numbers between (including) 128 and 255.
@@ -32,7 +32,11 @@ function startDedicatedServer()
 	if success then
 		-- set callbacks for the newly created server:
 		setServerCallbacks( server )
-		server:advertise( "0Players,DedicatedServer", "ExampleServer", MAIN_SERVER_ADDRESS )
+
+		network.advertise:setURL( MAIN_SERVER_ADDRESS )
+		network.advertise:setID( "ExampleServer" )
+		network.advertise:setInfo( "Players:0" )
+		network.advertise:start( server, "both" )
 	else
 		-- If I can't start a server for some reason, let user know and exit:
 		print(server)
@@ -43,10 +47,16 @@ end
 function connected( user )
 	-- Called when new user has fully connected.
 	print( user.playerName .. " has joined. (ID: " .. user.id .. ")" )
+
+	local list, num = network:getUsers()
+	network.advertise:setInfo( "Players:" .. num )
 end
 function disconnected( user )
 	-- Called when user leaves.
 	print( user.playerName .. " has has left. (ID: " .. user.id .. ")" )
+
+	local list, num = network:getUsers()
+	network.advertise:setInfo( "Players:" .. num )
 end
 function synchronize( user )
 	-- Send the map to the new client

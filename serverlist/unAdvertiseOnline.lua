@@ -14,7 +14,10 @@ print( "[ADVERTISE] Contacting: " .. URL )
 local body = ""
 body = body .. "port=" .. PORT.. "&"
 
-print( http.request( URL, body ) )
+local result, errCode, errorMsg, status = http.request( URL, body )
+if errCode and errCode ~= 200 then
+	print("[ADVERTISE] Could not un-advertise: " .. errCode, status, "Correct URL?", URL )
+end
 
 -- Close this process:
 os.exit()
