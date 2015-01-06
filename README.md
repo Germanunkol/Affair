@@ -148,15 +148,18 @@ Maximum size of a message is 4 GB (to be more precise: 256^4 bytes). You should 
 For the online server list to work, you will need to install some sort of web-server (a simple Apache server will do, you need php support) and put the files from the [AffairMainServer](https://github.com/Germanunkol/AffairMainServer) into some folder on that main server (The only requirement is that the folder is visible to anyone).
 On your game's server, call the following function (after having created a server using network:startServer):
 
-**server:advertise( data, id, url )**
-
+**server:advertise( data, id, url, portUDP )**
 - data: A string with any info about the server which you want the clients to get, before joining. This may contain a name, a password, the number of players, the map name etc.
 - id: A name which identifies the game
 - the URL to the **folder** where the scripts are on your main server. For example, if you have the advertise.php in a path like this: _~/web/public/AffairMainServer/advertise.php_, then the URL given here should be _~/web/public/AffairMainServer_.
+- portUDP: The UDP Port which will be used for the LAN server (default: 3410). **Important**: If you change this, you must also pass the same port to network:requestServerListLAN() (see below). If in doubt, do not use this parameter.
 
 **Careful!** The data and id strings may not contain the following characters: " & $ | and any whitespace (space, tab, newline). Usually, you're best off by using a comma-seperated list.
+
 The function will start sending updates about your server every minute or so, to tell the web server that your server is still alive, and will stop sending updates when your server goes offline.
+
 You can change the server's data, by calling the function again with only the data parameter - for example when you want to change the map or the number of players.
+
 If you want to stop advertising the server, call (for example because a round has started and you want no more players to join):
 **server:unAdvertise()**
 
@@ -200,7 +203,7 @@ On the client, you can start looking for LAN servers using:
 ```lua
 network:requestServerListLAN( id, portUDP )
 ```
-- **id** must be the same name as given to the server:advertise call on the server. The game filters out any servers which don't have the same ID, so make sure this is set correctly.
-- **portUDP** is an optional port you can set so that the UDP broadcast works on this port. **Important:** If you change this on the client, you must also change it on the server, when calling server:advertise!
-- 
+- **id** must be the same name as given to the server:advertise call on the server. The game filters out any servers which don't have the same ID, so make sure this is set correctly
+- **portUDP** is an optional port you can set so that the UDP broadcast works on this port. **Important:** If you change this on the client, you must also change it on the server, when calling server:advertise! If in doubt, do not use this parameter.
+
 You may call this function again to refresh the LAN server list (i.e. send out a new request). In this case, you can call it without parameters - the previous ones will be used.
