@@ -260,6 +260,7 @@ function advertise:update( dt )
 			-- Get any new messages:
 			local msg = requestOnlineCout:pop()
 			if msg then
+				print(msg)
 				self:parseOnlineServerEntry( msg )
 			end
 		end

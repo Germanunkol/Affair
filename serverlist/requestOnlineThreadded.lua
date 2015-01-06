@@ -16,10 +16,10 @@ local ID = arg[3]
 local body = ""
 body = body .. "id=" .. ID .. "&"
 
-local result, err = http.request( URL, body )
+local result, err, errMsg, status = http.request( URL .."/getList.php", body )
 
-if not result then
-	error( err )
+if errCode and errCode ~= 200 then
+	error( errCode .. " " .. (status or "Unknown Error") )
 end
 
 -- If successful, send back the lines one by one:
