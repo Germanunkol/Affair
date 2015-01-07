@@ -16,14 +16,14 @@ local ID = arg[3]
 local body = ""
 body = body .. "id=" .. ID .. "&"
 
-cout:push(body)
+--cout:push(body)
 
-local result, err, errMsg, status = http.request( URL .. "/getList.php", body )
+local result, errCode, errMsg, status = http.request( URL .. "/getList.php", body )
 
 if not result then
 	cout:push( err .. " " .. (status or "Unknown error" ) )
 end
-if err and err ~= 200 then
+if errCode and errCode >= 400 then
 	cout:push( err .. " " .. (status or "Unknown error" ) )
 end
 

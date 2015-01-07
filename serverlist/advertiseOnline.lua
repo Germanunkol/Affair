@@ -25,7 +25,7 @@ if err then
 --	print( "[ADVERTISE] Advertisement sent:", PORT, ID, INFO )
 end
 
-if errCode and errCode ~= 200 then
+if errCode and errCode >= 400 then
 	print( "[ADVERTISE] Could not advertise: " .. errCode, status, "Correct URL?", URL )
 end
 

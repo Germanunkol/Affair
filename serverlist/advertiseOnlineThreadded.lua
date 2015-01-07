@@ -29,19 +29,21 @@ while true do
 		if err then
 			cout:push( "Warning:" .. err)
 			cout:push("closed")
-		elseif errCode then		-- don't send two warnings
+			return
+		elseif errCode and errCode >= 400 then		-- don't send two warnings
 			local msg = "Warning: Could not advertise: \"" .. tostring(status) .. "\""
 			if errCode == 404 then
 				msg = msg .. "\n\tWrong URL? (" .. URL .. "/advertise.php)"
 			end
 			cout:push( msg )
 			cout:push("closed")
+			return
 		end
 	elseif command == "unAdvertise" then
 		local body = ""
 		body = body .. "port=" .. PORT.. "&"
 		local result, errCode, errorMsg, status = http.request( URL .. "/unAdvertise.php", body )
-		if errCode then
+		if errCode and errCode >= 400 then		-- don't send two warnings
 			local msg = "Warning: Could not unAdvertise: \"" .. tostring(status) .. "\""
 			if errCode == 404 then
 				msg = msg .. "\n\tWrong URL? (" .. URL .. "/advertise.php)"
