@@ -133,6 +133,7 @@ function advertise:stop()
 			-- Un-Advertise the server:
 			advertise:sendUpdateOnline( true )
 		end
+		print("stop", debug.traceback())
 		self.advertiseOnline = false
 	end
 end
@@ -217,9 +218,11 @@ function advertise:update( dt )
 
 	if self.advertiseOnline then
 		if self.advertiseOnlineTimer <= 0 then
+			print("2 online", os.time())
 			self:sendUpdateOnline()
 			self.advertiseOnlineTimer = ADVERTISEMENT_UPDATE_TIME
 		end
+		self.advertiseOnlineTimer = self.advertiseOnlineTimer - dt
 	end
 
 	if advertiseOnlineThread then
