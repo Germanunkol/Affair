@@ -42,14 +42,16 @@ end
 
 function advertise:setID( name )
 	-- Only these characters are allowed:
-	name = name:gsub("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?]", "")
+	name = name:gsub("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?']", "")
+	name = "\"" .. name .. "\""
 	self.ID = name
 end
 
 function advertise:setInfo( data )
-
 	-- Only these characters are allowed:
-	data = data:gsub("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?]", "")
+	data = data:gsub("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?']", "")
+	data = "\"" .. data .. "\""
+
 	self.serverInfo = data
 
 	if self.advertiseOnline then
@@ -280,6 +282,11 @@ function advertise:sendUpdateOnline( unAdvertise )
 			end
 
 		else
+			print( "lua " .. BASE_SLASH .. "serverlist/advertiseOnline.lua "
+			.. self.url .. "/advertise.php "
+			.. self.port .. " "
+			.. self.ID .. " "
+			.. self.serverInfo .. " &" )
 			os.execute( "lua " .. BASE_SLASH .. "serverlist/advertiseOnline.lua "
 			.. self.url .. "/advertise.php "
 			.. self.port .. " "
