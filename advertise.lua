@@ -43,14 +43,13 @@ end
 function advertise:setID( name )
 	-- Only these characters are allowed:
 	name = name:gsub("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?']", "")
-	name = "\"" .. name .. "\""
+
 	self.ID = name
 end
 
 function advertise:setInfo( data )
 	-- Only these characters are allowed:
 	data = data:gsub("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?']", "")
-	data = "\"" .. data .. "\""
 
 	self.serverInfo = data
 
@@ -115,6 +114,10 @@ end
 
 function advertise:stop()
 
+	if self.advertiseLAN or self.advertiseOnline then
+		print("[ADVERTISE] Stopped advertising the server.")
+	end
+
 	if self.advertiseLAN then
 		-- Stop advertising in LAN:
 		if self.advertiseUDP then
@@ -132,8 +135,6 @@ function advertise:stop()
 		end
 		self.advertiseOnline = false
 	end
-
-	print("[ADVERTISE] Stopped advertising the server.")
 end
 
 function advertise:request( where )
@@ -282,16 +283,11 @@ function advertise:sendUpdateOnline( unAdvertise )
 			end
 
 		else
-			print( "lua " .. BASE_SLASH .. "serverlist/advertiseOnline.lua "
-			.. self.url .. "/advertise.php "
-			.. self.port .. " "
-			.. self.ID .. " "
-			.. self.serverInfo .. " &" )
 			os.execute( "lua " .. BASE_SLASH .. "serverlist/advertiseOnline.lua "
 			.. self.url .. "/advertise.php "
 			.. self.port .. " "
-			.. self.ID .. " "
-			.. self.serverInfo .. " &" )
+			.. "\"" .. self.ID .. "\" "
+			.. "\"" .. self.serverInfo .. "\" &" )
 		end
 	else
 
@@ -308,8 +304,8 @@ function advertise:sendUpdateOnline( unAdvertise )
 			os.execute( "lua " .. BASE_SLASH .. "serverlist/unAdvertiseOnline.lua "
 			.. self.url .. "/advertise.php "
 			.. self.port .. " "
-			.. self.ID .. " "
-			.. self.serverInfo .. " &" )
+			.. "\"" .. self.ID .. "\" "
+			.. "\"" .. self.serverInfo .. "\" &" )
 		end
 	end
 end
@@ -338,7 +334,7 @@ function advertise:parseOnlineServerEntry( msg )
 			self.callbacks.fetchedAllOnline( listOnline )
 		end
 	else
-		local address, port, info = msg:match("(.*):(%S*)%s(.*)")
+		local address, port, info = msg:match("%[Entry%] (.-):(%S*)%s(.*)")
 		if address and port and info then
 			local e = {
 				address = address,
@@ -349,6 +345,8 @@ function advertise:parseOnlineServerEntry( msg )
 			if self.callbacks.newEntryOnline then
 				self.callbacks.newEntryOnline( e )
 			end
+		else
+			print("[ADVERTISE] Reply:", msg )
 		end
 	end
 end

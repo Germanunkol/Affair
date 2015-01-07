@@ -28,6 +28,7 @@ while true do
 		local err = result:match( "%[Warning:%](.-)\n" )
 		if err then
 			cout:push( "Warning:" .. err)
+			cout:push("closed")
 		elseif errCode then		-- don't send two warnings
 			local msg = "Warning: Could not advertise: \"" .. tostring(status) .. "\""
 			if errCode == 404 then
