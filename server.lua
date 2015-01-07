@@ -44,6 +44,7 @@ function Server:new( maxNumberOfPlayers, port, pingTime, portUDP )
 	o.callbacks = {
 		received = nil,
 		disconnectedUser = nil,
+		disconnectedUnsynchedUser = nil,
 		authorize = nil,
 		customDataChanged = nil,
 		userFullyConnected = nil,
@@ -386,10 +387,14 @@ function Server:disconnectedUser( user )
 	-- then tell them to delete him.
 	if user.synchronized then
 		self:send( CMD.PLAYER_LEFT, tostring(user.id) )
-	end
-	
-	if self.callbacks.disconnectedUser then
-		self.callbacks.disconnectedUser( user )
+
+		if self.callbacks.disconnectedUser then
+			self.callbacks.disconnectedUser( user )
+		end
+	else
+		if self.callbacks.disconnectedUnsynchedUser then
+			self.callbacks.disconnectedUnsynchedUser( user )
+		end
 	end
 end
 
