@@ -81,7 +81,7 @@ function Server:update( dt )
 
 			self:newUser( newUser )
 
-			print( "[NET] Client attempting to connect", id )
+			print( "[NET] Client attempting to connect (" .. id .. ")" )
 		end
 
 		for k, user in pairs(userList) do			
@@ -319,6 +319,8 @@ function Server:synchronizeUser( user )
 	if self.callbacks.userFullyConnected then
 		self.callbacks.userFullyConnected( user )
 	end
+
+	print("[NET] New Client! (" .. numberOfUsers .. ")" )
 end
 
 
@@ -351,7 +353,6 @@ function Server:send( command, msg, user )
 end
 
 function Server:newUser( user )
-	print("[NET] New Client! Number of Clients: " .. numberOfUsers )
 	-- Wait for AUTHORIZATION_TIMEOUT seconds before forcing authorization process:
 	user.authorizationTimeout = AUTHORIZATION_TIMEOUT
 end
@@ -381,17 +382,18 @@ function Server:authorize( user, authMsg )
 end
 
 function Server:disconnectedUser( user )
-	print("[NET] Client left. Clients: " .. numberOfUsers )
 
 	-- If the other clients already know about this client,
 	-- then tell them to delete him.
 	if user.synchronized then
+		print("[NET] Client left (" .. user.id .. ")" )
 		self:send( CMD.PLAYER_LEFT, tostring(user.id) )
 
 		if self.callbacks.disconnectedUser then
 			self.callbacks.disconnectedUser( user )
 		end
 	else
+		print("[NET] Client left before synchronizing (" .. user.id .. ")" )
 		if self.callbacks.disconnectedUnsynchedUser then
 			self.callbacks.disconnectedUnsynchedUser( user )
 		end
