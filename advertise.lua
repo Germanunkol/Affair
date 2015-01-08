@@ -13,7 +13,9 @@ advertise.callbacks = {
 	newEntryOnline = nil,
 	newEntryLAN = nil,
 	fetchedAllOnline = nil,		-- when done
+
 	advertiseWarnings = nil,	-- on error
+	requestWarnings = nil,	-- on error
 }
 
 local ADVERTISEMENT_UPDATE_TIME = 60	-- update every 60 seconds.
@@ -133,7 +135,6 @@ function advertise:stop()
 			-- Un-Advertise the server:
 			advertise:sendUpdateOnline( true )
 		end
-		print("stop", debug.traceback())
 		self.advertiseOnline = false
 	end
 end
@@ -261,11 +262,19 @@ function advertise:update( dt )
 			if err then
 				print("THREAD ERROR: " .. err)
 				requestOnlineThread = nil
+				if self.callbacks.requestWarnings then
+					self.callbacks.requestWarnings( err )
+				end
 			end
 			-- Get any new messages:
 			local msg = requestOnlineCout:pop()
 			if msg then
-				self:parseOnlineServerEntry( msg )
+				if not self:parseOnlineServerEntry( msg ) then
+					requestOnlineThread = nil
+					if self.callbacks.requestWarnings then
+						self.callbacks.requestWarnings( msg )
+					end
+				end
 			end
 		end
 	end
@@ -335,6 +344,7 @@ function advertise:parseOnlineServerEntry( msg )
 		if self.callbacks.fetchedAllOnline then
 			self.callbacks.fetchedAllOnline( listOnline )
 		end
+		return true
 	else
 		local address, port, info = msg:match("%[Entry%] (.-):(%S*)%s(.*)")
 		if address and port and info then
@@ -347,10 +357,12 @@ function advertise:parseOnlineServerEntry( msg )
 			if self.callbacks.newEntryOnline then
 				self.callbacks.newEntryOnline( e )
 			end
+			return true
 		else
 			print("[ADVERTISE] Reply:", msg )
 		end
 	end
+	return false
 end
 
 function advertise:getServerList( where )

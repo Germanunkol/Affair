@@ -20,11 +20,8 @@ body = body .. "id=" .. ID .. "&"
 
 local result, errCode, errMsg, status = http.request( URL .. "/getList.php", body )
 
-if not result then
-	cout:push( err .. " " .. (status or "Unknown error" ) )
-end
 if errCode and errCode >= 400 then
-	cout:push( err .. " " .. (status or "Unknown error" ) )
+	cout:push( errCode .. " '" .. (status or "Unknown error" ) .. "' Is URL correct? " .. URL .. "/getList.php" )
 end
 
 -- If successful, send back the lines one by one:
