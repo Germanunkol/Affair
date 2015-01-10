@@ -20,9 +20,6 @@ local numberOfUsers = 0
 local userListByName = {}
 local authorizationTimeout = {}
 
-local partMessage = ""
-local messageLength = nil
-
 local MAX_PLAYERS = 16
 
 local AUTHORIZATION_TIMEOUT = 2
@@ -53,7 +50,6 @@ function Server:new( maxNumberOfPlayers, port, pingTime, portUDP )
 	userList = {}
 	userListByName = {}
 	numberOfUsers = 0
-	partMessage = ""
 	PINGTIME = pingTime or 5
 
 	MAX_PLAYERS = maxNumberOfPlayers or 16
@@ -84,127 +80,83 @@ function Server:update( dt )
 			print( "[NET] Client attempting to connect (" .. id .. ")" )
 		end
 
-		for k, user in pairs(userList) do			
+		for k, u in pairs(userList) do			
 
-			local data, msg, partOfLine = user.connection:receive( 9999 )
+			local data, msg, partOfLine = u.connection:receive( 9999 )
 			if data then
-				partMessage = partMessage .. data
+				u.incoming.part = u.incoming.part .. data
 			else
 
 				if msg == "timeout" then	-- only part of the message could be received
 					if #partOfLine > 0 then
-						partMessage = partMessage .. partOfLine
+						-- store for later user:
+						u.incoming.part = u.incoming.part .. partOfLine
 					end
-				elseif msg == "closed" then
-					--broadcast("CHAT|[STAT]" .. clientList[k].playerName .. " left the game.")
-					--if client.character then
-						--broadcast("CHARACTERDEL|" .. client.playerName)
-					--end
+				elseif msg == "closed" then		-- something closed the connection
 					numberOfUsers = numberOfUsers - 1
 
-					self:disconnectedUser( user )
+					self:disconnectedUser( u )
 					
 					userList[k] = nil
-					if userListByName[ user.playerName ] then
-						userListByName[ user.playerName ] = nil
+					if userListByName[ u.playerName ] then
+						userListByName[ u.playerName ] = nil
 					end
 				else
 					print("[NET] Err Received:", msg, data)
 				end
 			end
 
-			if not messageLength then
-				if #partMessage >= 1 then
+			if not u.incoming.length then
+				if #u.incoming.part >= 1 then
 					local headerLength = nil
-					messageLength, headerLength = utility:headerToLength( partMessage:sub(1,5) )
-					if messageLength and headerLength then
-						partMessage = partMessage:sub(headerLength + 1, #partMessage )
+					u.incoming.length, headerLength = utility:headerToLength( u.incoming.part:sub(1,5) )
+					if u.incoming.length and headerLength then
+						u.incoming.part = u.incoming.part:sub(headerLength + 1, #u.incoming.part )
 					end
 				end
 			end
 
 			-- if I already know how long the message should be:
-			if messageLength then
-				if #partMessage >= messageLength then
+			if u.incoming.length then
+				if #u.incoming.part >= u.incoming.length then
 					-- Get actual message:
-					local currentMsg = partMessage:sub(1, messageLength)
+					local currentMsg = u.incoming.part:sub(1, u.incoming.length)
 
 					-- Remember rest of already received messages:
-					partMessage = partMessage:sub( messageLength + 1, #partMessage )
+					u.incoming.part = u.incoming.part:sub( u.incoming.length + 1, #u.incoming.part )
 
 					command, content = string.match( currentMsg, "(.)(.*)")
 					command = string.byte( command )
 
-					self:received( command, content, user )
-					messageLength = nil
-
+					self:received( command, content, u )
+					u.incoming.length = nil
 				end
 			end
 
-
-
-			--[[if data then
-				if #partMessage > 0 then
-					data = partMessage .. data
-					partMessage = ""
-				end
-
-
-				-- First letter stands for the command:
-				command, content = string.match(data, "(.)(.*)")
-				command = string.byte( command )
-
-				self:received( command, content, user )
-				
-			else	-- if "data" is nil, then there was an error:
-				
-				if msg == "timeout" then	-- only part of the message could be received
-					if #partOfLine > 0 then
-						partMessage = partMessage .. partOfLine
-					end
-				elseif msg == "closed" then
-					--broadcast("CHAT|[STAT]" .. clientList[k].playerName .. " left the game.")
-					--if client.character then
-						--broadcast("CHARACTERDEL|" .. client.playerName)
-					--end
-					numberOfUsers = numberOfUsers - 1
-
-					self:disconnectedUser( user )
-					
-					userList[k] = nil
-					if userListByName[ user.playerName ] then
-						userListByName[ user.playerName ] = nil
-					end
-				else
-					print("[NET] Err Received:", msg, data)
-				end
-			end]]
-
 			-- Fallback for backwards compability with clients which don't send an authorization
 			-- request:
-			if not user.authorized then
-				user.authorizationTimeout = user.authorizationTimeout - dt
+			if not u.authorized then
+				u.authorizationTimeout = u.authorizationTimeout - dt
 				-- Force authorization test now, with empty auth message:
-				if user.authorizationTimeout < 0 then
-					self:authorize( user, "" )
+				if u.authorizationTimeout < 0 then
+					self:authorize( u, "" )
 				end
 			end
 
 			-- Every PINGTIME seconds, ping the user and wait for a pong.
 			-- Check if we already pinged and if not, send a ping:
-			if not user.ping.waitingForPong then
-				if user.ping.timer > PINGTIME then
+			if not u.ping.waitingForPong then
+				if u.ping.timer > PINGTIME then
 					self:send( CMD.PING, "" )
-					user.ping.timer = 0
-					user.ping.waitingForPong = true
-
+					u.ping.timer = 0
+					u.ping.waitingForPong = true
 				end
 			else	-- Otherwise, wait for pong. If it doesn't come, kick user.
-				if user.ping.timer > 3*PINGTIME then
-					self:kickUser( user, "Timeout. Didn't respond to ping." )
+				if u.ping.timer > 3*PINGTIME then
+					self:kickUser( u, "Timeout. Didn't respond to ping." )
 				end
 			end
-			user.ping.timer = user.ping.timer + dt
+			u.ping.timer = u.ping.timer + dt
 		end
 
 		return true
