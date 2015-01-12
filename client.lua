@@ -42,7 +42,8 @@ function Client:new( address, port, playerName, authMsg )
 		received = nil,
 		connected = nil,
 		disconnected = nil,
-		newUser = nil,
+		otherUserConnected = nil,
+		otherUserDisconnected = nil,
 		customDataChanged = nil,
 	}
 
@@ -166,8 +167,12 @@ function Client:received( command, msg )
 		end
 	elseif command == CMD.PLAYER_LEFT then
 		local id = tonumber(msg)
+		local u = userList[id]
 		userList[id] = nil
 		numberOfUsers = numberOfUsers - 1
+		if self.callbacks.otherUserDisconnected then
+			self.callbacks.otherUserDisconnected( u )
+		end
 	elseif command == CMD.AUTHORIZED then
 		local authed, reason = string.match( msg, "(.*)|(.*)" )
 		if authed == "true" then

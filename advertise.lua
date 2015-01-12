@@ -13,7 +13,9 @@ advertise.callbacks = {
 	newEntryOnline = nil,
 	newEntryLAN = nil,
 	fetchedAllOnline = nil,		-- when done
+
 	advertiseWarnings = nil,	-- on error
+	requestWarnings = nil,	-- on error
 }
 
 local ADVERTISEMENT_UPDATE_TIME = 60	-- update every 60 seconds.
@@ -42,14 +44,15 @@ end
 
 function advertise:setID( name )
 	-- Only these characters are allowed:
-	name = name:gsub("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?]", "")
+	name = name:gsub("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?']", "")
+
 	self.ID = name
 end
 
 function advertise:setInfo( data )
-
 	-- Only these characters are allowed:
-	data = data:gsub("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?]", "")
+	data = data:gsub("[^a-zA-Z0-9%.,:;/%-%+_%%%(%)%[%]!%?']", "")
+
 	self.serverInfo = data
 
 	if self.advertiseOnline then
@@ -113,6 +116,10 @@ end
 
 function advertise:stop()
 
+	if self.advertiseLAN or self.advertiseOnline then
+		print("[ADVERTISE] Stopped advertising the server.")
+	end
+
 	if self.advertiseLAN then
 		-- Stop advertising in LAN:
 		if self.advertiseUDP then
@@ -130,8 +137,6 @@ function advertise:stop()
 		end
 		self.advertiseOnline = false
 	end
-
-	print("[ADVERTISE] Stopped advertising the server.")
 end
 
 function advertise:request( where )
@@ -217,6 +222,7 @@ function advertise:update( dt )
 			self:sendUpdateOnline()
 			self.advertiseOnlineTimer = ADVERTISEMENT_UPDATE_TIME
 		end
+		self.advertiseOnlineTimer = self.advertiseOnlineTimer - dt
 	end
 
 	if advertiseOnlineThread then
@@ -256,12 +262,19 @@ function advertise:update( dt )
 			if err then
 				print("THREAD ERROR: " .. err)
 				requestOnlineThread = nil
+				if self.callbacks.requestWarnings then
+					self.callbacks.requestWarnings( err )
+				end
 			end
 			-- Get any new messages:
 			local msg = requestOnlineCout:pop()
 			if msg then
-				print(msg)
-				self:parseOnlineServerEntry( msg )
+				if not self:parseOnlineServerEntry( msg ) then
+					requestOnlineThread = nil
+					if self.callbacks.requestWarnings then
+						self.callbacks.requestWarnings( msg )
+					end
+				end
 			end
 		end
 	end
@@ -284,8 +297,8 @@ function advertise:sendUpdateOnline( unAdvertise )
 			os.execute( "lua " .. BASE_SLASH .. "serverlist/advertiseOnline.lua "
 			.. self.url .. "/advertise.php "
 			.. self.port .. " "
-			.. self.ID .. " "
-			.. self.serverInfo .. " &" )
+			.. "\"" .. self.ID .. "\" "
+			.. "\"" .. self.serverInfo .. "\" &" )
 		end
 	else
 
@@ -302,8 +315,8 @@ function advertise:sendUpdateOnline( unAdvertise )
 			os.execute( "lua " .. BASE_SLASH .. "serverlist/unAdvertiseOnline.lua "
 			.. self.url .. "/advertise.php "
 			.. self.port .. " "
-			.. self.ID .. " "
-			.. self.serverInfo .. " &" )
+			.. "\"" .. self.ID .. "\" "
+			.. "\"" .. self.serverInfo .. "\" &" )
 		end
 	end
 end
@@ -331,8 +344,9 @@ function advertise:parseOnlineServerEntry( msg )
 		if self.callbacks.fetchedAllOnline then
 			self.callbacks.fetchedAllOnline( listOnline )
 		end
+		return true
 	else
-		local address, port, info = msg:match("(.*):(%S*)%s(.*)")
+		local address, port, info = msg:match("%[Entry%] (.-):(%S*)%s(.*)")
 		if address and port and info then
 			local e = {
 				address = address,
@@ -343,8 +357,12 @@ function advertise:parseOnlineServerEntry( msg )
 			if self.callbacks.newEntryOnline then
 				self.callbacks.newEntryOnline( e )
 			end
+			return true
+		else
+			print("[ADVERTISE] Reply:", msg )
 		end
 	end
+	return false
 end
 
 function advertise:getServerList( where )

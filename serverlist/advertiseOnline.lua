@@ -21,12 +21,12 @@ local result, errCode, errorMsg, status = http.request( URL, body )
 local err = result:match( "%[Warning:%]%s?(.-)\n" )
 if err then
 	print( "[ADVERTISE] " .. err )
-else
-	print( "[ADVERTISE] Advertisement sent:", PORT, ID, INFO )
+--else
+--	print( "[ADVERTISE] Advertisement sent:", PORT, ID, INFO )
 end
 
-if errCode and errCode ~= 200 then
-	print("[ADVERTISE] Could not advertise: " .. errCode, status, "Correct URL?", URL )
+if errCode and errCode >= 400 then
+	print( "[ADVERTISE] Could not advertise: " .. errCode, status, "Correct URL?", URL )
 end
 
 -- Close this process:
